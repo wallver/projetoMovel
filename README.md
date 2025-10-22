@@ -1,193 +1,245 @@
-# Projeto Móvel - TrabalhoTuratti
+# Projeto Movel - Sistema de Autenticacao
 
-Projeto da disciplina de programação de dispositivos móveis com ReactNative + Expo (Android)
+Sistema completo de autenticacao mobile com React Native/Expo e Firebase
 
-Sistema de autenticação mobile com React Native/Expo e Firebase
+## Inicio Rapido
 
-## Estrutura do Projeto
-
-```
-projetoMovel/
-├── backend/           # API Backend (Node.js + Express)
-├── frontend/          # Aplicação Mobile (React Native + Expo)
-├── documentacao/      # Documentação do projeto
-├── apresentacao/      # Materiais de apresentação
-├── video/            # Vídeos do projeto
-├── COMO_RODAR.md     # Guia rápido
-├── FIREBASE_SETUP.md # Configuração do Firebase
-└── README.md         # Este arquivo
-```
-
----
-
-## Como Rodar o Projeto
-
-### Pré-requisitos
-
-- **Node.js** (versão 18 ou superior)
-- **npm** ou **yarn**
-- **Expo Go** app instalado no celular (Android/iOS)
-- **Conta Firebase** configurada
-
----
-
-## Backend (API)
-
-### 1. Navegar para a pasta backend:
 ```bash
-cd backend
-```
-
-### 2. Instalar dependências (se ainda não instalou):
-```bash
-npm install
-```
-
-### 3. Iniciar o servidor:
-```bash
-npm start
-```
-
-O servidor irá iniciar na porta **3001**:
-- **Health check:** http://localhost:3001/api/health
-- **API Base:** http://localhost:3001/api
-
----
-
-## Frontend (Mobile)
-
-### 1. Navegar para a pasta frontend:
-```bash
+# 1. Criar arquivo .env no frontend (veja INICIO_RAPIDO.md)
+# 2. Instalar dependencias:
 cd frontend
-```
-
-### 2. Instalar dependências (se ainda não instalou):
-```bash
 npm install
+
+# 3. Iniciar (escolha um):
+npx expo start              # Mesma rede WiFi
+npx expo start --tunnel     # Qualquer rede (recomendado)
 ```
 
-### 3. Iniciar o Expo:
-```bash
-npx expo start
-```
+Depois escaneie o QR Code com o Expo Go!
 
-### 4. Testar no celular:
-- Baixe o app **Expo Go** na Play Store (Android) ou App Store (iOS)
-- Escaneie o **QR Code** que aparece no terminal
-- O app será carregado no seu celular
+**Documentacao completa:** `documentacao/COMO_RODAR.md`
 
 ---
 
-## Testando a Aplicação
+## Estrutura do App
 
-### Cadastro de Novo Usuário:
-1. Abra o app
-2. Clique em "Cadastrar"
-3. Preencha: Nome, Email, Senha (mínimo 6 caracteres)
-4. Clique em "Cadastrar"
-5. Faça login com as credenciais criadas
-
-### Login:
-- Use o email e senha cadastrados
-- Clique em "Entrar"
-
-### Recuperação de Senha (REAL):
-1. Clique em "Esqueci minha senha"
-2. Digite seu email
-3. **Verifique sua caixa de email** (Firebase envia automaticamente)
-4. Clique no link recebido
-5. Defina nova senha
-6. Faça login
+```
+Login
+  ↓
+Dashboard (Tela inicial)
+  └─→ Avatar (canto superior direito)
+      ├─→ Meu Perfil (informacoes completas)
+      ├─→ Configuracoes
+      │   └─→ Alterar Informacoes
+      │       └─→ Mudar Senha
+      └─→ Sair
+```
 
 ---
 
 ## Funcionalidades
 
-- **Login** - Autenticação com Firebase
-- **Cadastro** - Registro de novos usuários
-- **Recuperação de Senha** - Email automático via Firebase
-- **Salvamento de Dados** - Firestore Database
-- **Validações** - Email, senha, campos obrigatórios
+### Autenticacao:
+- Login com email/senha
+- Cadastro de novos usuarios
+- Recuperacao de senha por email
+- Logout
+
+### Perfil:
+- Ver informacoes pessoais
+- Estatisticas (futuras)
+
+### Configuracoes:
+- Alterar senha
+- Menu organizado por secoes
+- Opcoes futuras (tema, notificacoes, etc)
+
+### Seguranca:
+- Variaveis de ambiente protegidas
+- Re-autenticacao para mudar senha
+- Validacoes em multiplas camadas
+- Firebase Authentication + Firestore
 
 ---
 
-## Endpoints da API
-
-| Método | Endpoint | Descrição |
-|--------|----------|-----------|
-| GET | `/api/health` | Status do servidor |
-
----
-
-## Status do Projeto
-
-| Componente | Status | Tecnologia |
-|------------|--------|------------|
-| **Backend** | ✅ Funcional | Node.js + Express |
-| **Frontend** | ✅ Funcional | React Native + Expo |
-| **Autenticação** | ✅ Funcional | Firebase Authentication |
-| **Banco de Dados** | ✅ Funcional | Firebase Firestore |
-| **Email** | ✅ Funcional | Firebase (automático) |
-
----
-
-## Tecnologias Utilizadas
-
-### Backend:
-- Node.js
-- Express.js
-- CORS
+## Tecnologias
 
 ### Frontend:
 - React Native
 - Expo
 - TypeScript
-- React Navigation
+- Expo Router (navegacao)
 - Firebase SDK
 
-### Firebase:
+### Backend:
 - Firebase Authentication
 - Cloud Firestore
-- Email Recovery (automático)
+- Node.js + Express (opcional)
 
 ---
 
-## Notas Importantes
+## Modos de Conexao
 
-1. **Firebase está configurado e funcionando**
-2. **Emails de recuperação são enviados automaticamente**
-3. **Dados são salvos no Firestore**
-4. **Celular e computador devem estar na mesma rede WiFi**
+| Modo | Comando | Quando usar |
+|------|---------|-------------|
+| **WiFi Local** | `npx expo start` | Mesma rede (rapido) |
+| **Tunnel** | `npx expo start --tunnel` | Qualquer lugar |
+| **USB** | `npx expo start --localhost` + ADB | Com cabo (Android) |
 
----
-
-## Documentação Adicional
-
-- `documentacao/COMO_RODAR.md` - Guia rápido para iniciar o projeto
-- `documentacao/FIREBASE_SETUP.md` - Documentação completa do Firebase
-- `FIREBASE_REGRAS_FIRESTORE.md` - Como configurar regras do Firestore
-- `backend/README.md` - Documentação do backend
-- `documentacao/` - Documentos do projeto
+**Recomendado:** Use `--tunnel` se tiver qualquer problema de rede!
 
 ---
 
-## Próximas Melhorias
+## Estrutura de Pastas
 
-- [ ] Verificação de email após cadastro
-- [ ] Login com Google
-- [ ] Perfil de usuário editável
+```
+projetoMovel/
+├── frontend/                  # App mobile
+│   ├── app/
+│   │   ├── (tabs)/
+│   │   │   └── index.tsx     # Login
+│   │   ├── dashboard.tsx     # Tela inicial
+│   │   ├── profile.tsx       # Perfil
+│   │   ├── settings.tsx      # Configuracoes
+│   │   ├── edit-info.tsx     # Alterar senha
+│   │   ├── services/
+│   │   │   └── authService.ts
+│   │   └── utils/
+│   │       └── firebase.ts
+│   ├── .env                  # Criar! (veja INICIO_RAPIDO.md)
+│   └── package.json
+│
+├── backend/                   # API (opcional)
+│   ├── server.js
+│   └── package.json
+│
+├── documentacao/
+│   ├── COMO_RODAR.md         # Guia completo
+│   ├── FIREBASE_SETUP.md     # Setup Firebase
+│   ├── NOVA_ESTRUTURA.md     # Estrutura do app
+│   └── ALTERAR_SENHA.md      # Como mudar senha
+│
+├── INICIO_RAPIDO.md          # 3 passos para comecar
+└── README.md                 # Este arquivo
+```
+
+---
+
+## Documentacao
+
+- **INICIO_RAPIDO.md** - 3 passos para comecar
+- **documentacao/COMO_RODAR.md** - Guia completo + troubleshooting
+- **documentacao/FIREBASE_SETUP.md** - Configurar Firebase
+- **documentacao/NOVA_ESTRUTURA.md** - Entender o app
+- **documentacao/ALTERAR_SENHA.md** - Detalhes da senha
+
+---
+
+## Problemas Comuns
+
+### Porta ocupada:
+```bash
+npx expo start --tunnel --port 8082
+```
+
+### Cache:
+```bash
+npx expo start --tunnel --clear
+```
+
+### Variaveis nao carregam:
+```bash
+# Certifique-se que .env existe:
+ls frontend/.env
+
+# Reinicie com clear:
+npx expo start --tunnel --clear
+```
+
+### Firebase errors:
+Veja `documentacao/FIREBASE_SETUP.md`
+
+**Mais solucoes:** `documentacao/COMO_RODAR.md`
+
+---
+
+## Status
+
+| Componente | Status | Descricao |
+|------------|--------|-----------|
+| Login | ✅ Funcional | Firebase Auth |
+| Cadastro | ✅ Funcional | Firebase Auth + Firestore |
+| Recuperacao | ✅ Funcional | Email automatico |
+| Dashboard | ✅ Funcional | Tela inicial |
+| Perfil | ✅ Funcional | Informacoes completas |
+| Configuracoes | ✅ Funcional | Menu organizado |
+| Alterar Senha | ✅ Funcional | Com re-autenticacao |
+| Logout | ✅ Funcional | Limpa sessao |
+
+---
+
+## Proximas Funcionalidades
+
+- [ ] Lembretes (cards no dashboard)
+- [ ] Tarefas
+- [ ] Agenda
+- [ ] Relatorios
 - [ ] Upload de foto de perfil
-- [ ] Testes automatizados
+- [ ] Editar nome/email
+- [ ] Tema escuro
+- [ ] Notificacoes push
+- [ ] Login com Google
 
 ---
 
-## Suporte
+## Testando
 
-Para problemas ou dúvidas, consulte:
-- `documentacao/COMO_RODAR.md` - Soluções de problemas comuns
-- `documentacao/FIREBASE_SETUP.md` - Configuração do Firebase
-- `FIREBASE_REGRAS_FIRESTORE.md` - Configurar regras de segurança
+### 1. Cadastro:
+```
+Abrir app → Cadastrar → Preencher dados → Cadastrar
+```
+
+### 2. Login:
+```
+Email + Senha → Entrar → Dashboard
+```
+
+### 3. Ver Perfil:
+```
+Dashboard → Avatar → Meu Perfil
+```
+
+### 4. Alterar Senha:
+```
+Dashboard → Avatar → Configuracoes → Alterar Informacoes
+```
+
+### 5. Logout:
+```
+Dashboard → Avatar → Sair
+```
 
 ---
 
-**Desenvolvido para o Trabalho Turatti**
+## Requisitos
+
+- Node.js 18+
+- npm ou yarn
+- Expo Go (celular)
+- Firebase configurado
+
+---
+
+## Licenca
+
+Este projeto foi desenvolvido para fins academicos.
+
+---
+
+## Contato
+
+Para duvidas, veja a documentacao em `documentacao/`
+
+---
+
+**Bom desenvolvimento! 🚀**
