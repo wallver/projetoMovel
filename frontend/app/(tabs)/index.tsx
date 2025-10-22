@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { useRouter } from "expo-router";
 import { registerUser, loginUser, resetPassword } from "../services/authService";
 
 export default function App() {
+  const router = useRouter();
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
   const [email, setEmail] = useState("");
@@ -26,10 +28,8 @@ export default function App() {
       const result = await loginUser(user, password);
       
       if (result.success) {
-        Alert.alert("Sucesso!", result.message);
-        setError("");
-        // Aqui você pode navegar para outra tela
-        // Por exemplo: router.push('/home')
+        // Navega para o dashboard
+        router.push('/dashboard');
       } else {
         setError(result.message);
       }
