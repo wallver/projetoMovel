@@ -4,6 +4,9 @@ import {
   sendPasswordResetEmail,
   signOut,
   updateProfile,
+  updatePassword,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
   User
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
@@ -144,7 +147,92 @@ export const logoutUser = async () => {
   }
 };
 
-// Obter usuário atual
-export const getCurrentUser = (): User | null => {
-  return auth.currentUser;
+// Obter usuário atual com dados do Firestore
+export const getCurrentUser = async () => {
+  try {
+    const user = auth.currentUser;
+    
+    if (!user) {
+      return null;
+    }
+
+    // Buscar dados adicionais do Firestore
+    const userDoc = await getDoc(doc(db, 'users', user.uid));
+    
+    if (userDoc.exists()) {
+      return {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        ...userDoc.data()
+      };
+    }
+
+    // Se não encontrar no Firestore, retorna dados básicos do Auth
+    return {
+      uid: user.uid,
+      email: user.email,
+      displayName: user.displayName
+    };
+  } catch (error) {
+    console.error('Erro ao obter usuário:', error);
+    return null;
+  }
+};
+
+// Alterar senha do usuário logado
+export const changePassword = async (currentPassword: string, newPassword: string) => {
+  try {
+    const user = auth.currentUser;
+    
+    if (!user || !user.email) {
+      return {
+        success: false,
+        message: 'Usuário não está logado'
+      };
+    }
+
+    // Re-autenticar usuário antes de alterar senha (requisito de segurança do Firebase)
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    
+    try {
+      await reauthenticateWithCredential(user, credential);
+    } catch (reauthError: any) {
+      console.error('Erro na re-autenticação:', reauthError);
+      
+      let message = 'Senha atual incorreta';
+      if (reauthError.code === 'auth/wrong-password' || reauthError.code === 'auth/invalid-credential') {
+        message = 'Senha atual incorreta';
+      } else if (reauthError.code === 'auth/too-many-requests') {
+        message = 'Muitas tentativas. Tente novamente mais tarde';
+      }
+      
+      return {
+        success: false,
+        message: message
+      };
+    }
+
+    // Atualizar senha
+    await updatePassword(user, newPassword);
+
+    return {
+      success: true,
+      message: 'Senha alterada com sucesso!'
+    };
+  } catch (error: any) {
+    console.error('Erro ao alterar senha:', error);
+    
+    let message = 'Erro ao alterar senha';
+    if (error.code === 'auth/weak-password') {
+      message = 'A nova senha deve ter pelo menos 6 caracteres';
+    } else if (error.code === 'auth/requires-recent-login') {
+      message = 'Por segurança, faça login novamente antes de alterar a senha';
+    }
+
+    return {
+      success: false,
+      message: message
+    };
+  }
 };
