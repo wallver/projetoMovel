@@ -187,4 +187,4 @@ app.use(cors({
 - Dados armazenados **em memória** (serão perdidos ao reiniciar)
 - Usuário padrão: `teste` / senha: `1234`
 - Porta padrão: `3001`
-- CORS configurado para aceitar todas as origens
+- CORS configurado para aceitar todas as origens.
