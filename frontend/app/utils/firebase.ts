@@ -4,14 +4,15 @@ import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
 // Your web app's Firebase configuration
+// IMPORTANTE: As credenciais agora vêm de variáveis de ambiente
 const firebaseConfig = {
-  apiKey: "AIzaSyBW85iYMpE7yCu6XDNohHTmr8ON11-FWUI",
-  authDomain: "lembretecontas.firebaseapp.com",
-  projectId: "lembretecontas",
-  storageBucket: "lembretecontas.firebasestorage.app",
-  messagingSenderId: "853973539596",
-  appId: "1:853973539596:web:010e651e5414d4b2690729",
-  measurementId: "G-S88VBFRSEF"
+  apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+  authDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+  measurementId: process.env.EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
