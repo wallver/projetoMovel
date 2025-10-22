@@ -62,9 +62,10 @@ npx expo start
 
 3. **Aguarde o carregamento** (pode demorar alguns segundos)
 
-4. **Teste o login:**
-   - Usuário: `teste`
-   - Senha: `1234`
+4. **Cadastre um usuário:**
+   - Clique em "Cadastrar"
+   - Preencha: Nome, Email, Senha (mínimo 6 caracteres)
+   - Faça login com as credenciais criadas
 
 ---
 
@@ -83,7 +84,7 @@ No terminal do Expo, pressione `w` para abrir no navegador web.
 **Solução:** Certifique-se de estar na pasta correta (`cd backend` ou `cd frontend`)
 
 ### "Port 3001 is already in use"
-**Solução:** Feche outros processos Node.js ou mude a porta em `backend/server-simple.js`
+**Solução:** Feche outros processos Node.js ou mude a porta em `backend/server.js`
 
 ### QR Code não aparece
 **Solução:** 
@@ -121,8 +122,9 @@ No terminal do Expo, pressione `w` para abrir no navegador web.
 
 Consulte os arquivos:
 - `README.md` - Documentação completa
+- `documentacao/FIREBASE_SETUP.md` - Configuração do Firebase
+- `FIREBASE_REGRAS_FIRESTORE.md` - Configurar regras de segurança
 - `backend/README.md` - Documentação do backend
-- `frontend/README.md` - Documentação do frontend
 
 ---
 
