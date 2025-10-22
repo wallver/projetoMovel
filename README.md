@@ -4,13 +4,12 @@ Sistema completo de autenticacao mobile com React Native/Expo e Firebase
 
 ## Inicio Rapido
 
-```bash
-# 1. Criar arquivo .env no frontend (veja INICIO_RAPIDO.md)
-# 2. Instalar dependencias:
+
+# 1. Instalar dependencias:
 cd frontend
 npm install
 
-# 3. Iniciar (escolha um):
+# 2. Iniciar (escolha um):
 npx expo start              # Mesma rede WiFi
 npx expo start --tunnel     # Qualquer rede (recomendado)
 ```
