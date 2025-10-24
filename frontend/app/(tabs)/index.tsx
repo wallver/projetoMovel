@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { View, Text, TextInput, Button, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
-import { registerUser, loginUser, resetPassword } from "../services/authService";
+import { registerUser, loginUser, resetPassword, getCurrentUser } from "../services/authService";
 
 export default function App() {
   const router = useRouter();
@@ -12,8 +12,36 @@ export default function App() {
   const [newEmail, setNewEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [screen, setScreen] = useState<"login" | "forgot" | "register">("login");
+
+  // Verificar se já está logado
+  useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const currentUser = await getCurrentUser();
+        if (currentUser) {
+          router.replace('/(tabs)/bills' as any);
+        }
+      } catch (error) {
+        console.log('Não autenticado');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    // Delay para evitar erro de navegação
+    const timer = setTimeout(checkAuth, 300);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (loading) {
+    return (
+      <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
+        <ActivityIndicator size="large" color="#007AFF" />
+      </View>
+    );
+  }
 
   const handleLogin = async () => {
     if (!user || !password) {
@@ -28,8 +56,8 @@ export default function App() {
       const result = await loginUser(user, password);
       
       if (result.success) {
-        // Navega para o dashboard
-        router.push('/dashboard');
+        // Navega para a tela de contas (bills)
+        router.replace('/(tabs)/bills');
       } else {
         setError(result.message);
       }
@@ -80,11 +108,13 @@ export default function App() {
       const result = await registerUser(newUser, newEmail, newPassword);
       
       if (result.success) {
-        Alert.alert("Sucesso!", result.message + "\nFaça login com suas credenciais");
-        setNewUser("");
-        setNewEmail("");
-        setNewPassword("");
-        setScreen("login");
+        // Após registrar, ir direto para a tela de contas
+        Alert.alert("Sucesso!", "Cadastro realizado! Bem-vindo(a)!", [
+          {
+            text: "OK",
+            onPress: () => router.replace('/(tabs)/bills')
+          }
+        ]);
       } else {
         Alert.alert("Erro", result.message);
       }

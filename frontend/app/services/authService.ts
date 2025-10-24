@@ -11,6 +11,9 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../utils/firebase';
+import axios from 'axios';
+
+const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export interface UserData {
   uid: string;
@@ -18,6 +21,21 @@ export interface UserData {
   username: string;
   createdAt: Date;
 }
+
+// Sincronizar usuário com backend
+const syncUserWithBackend = async (firebaseUid: string, email: string, username: string) => {
+  try {
+    await axios.post(`${API_URL}/users/sync`, {
+      firebaseUid,
+      email,
+      username,
+    });
+    console.log('✅ Usuário sincronizado com backend');
+  } catch (error) {
+    console.error('⚠️ Erro ao sincronizar com backend:', error);
+    // Não bloqueia o registro se falhar
+  }
+};
 
 // Registrar novo usuário
 export const registerUser = async (username: string, email: string, password: string) => {
@@ -38,6 +56,9 @@ export const registerUser = async (username: string, email: string, password: st
       email: email,
       createdAt: new Date().toISOString()
     });
+
+    // Sincronizar com backend
+    await syncUserWithBackend(user.uid, email, username);
 
     return {
       success: true,
