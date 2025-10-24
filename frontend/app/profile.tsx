@@ -1,7 +1,7 @@
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, ScrollView, Alert } from "react-native";
 import { useEffect, useState } from "react";
 import { useRouter } from "expo-router";
-import { getCurrentUser } from "./services/authService";
+import { getCurrentUser, logoutUser } from "./services/authService";
 import { Ionicons } from '@expo/vector-icons';
 
 export default function Profile() {
@@ -18,7 +18,7 @@ export default function Profile() {
       const currentUser = await getCurrentUser();
       
       if (!currentUser) {
-        router.replace('/');
+        router.replace('/(tabs)/index' as any);
         return;
       }
 
@@ -28,6 +28,32 @@ export default function Profile() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleLogout = async () => {
+    Alert.alert(
+      "Sair",
+      "Tem certeza que deseja sair?",
+      [
+        {
+          text: "Cancelar",
+          style: "cancel"
+        },
+        {
+          text: "Sair",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await logoutUser();
+              router.replace('/(tabs)/index' as any);
+            } catch (error) {
+              console.error('Erro ao fazer logout:', error);
+              Alert.alert('Erro', 'Não foi possível fazer logout');
+            }
+          }
+        }
+      ]
+    );
   };
 
   if (loading) {
@@ -94,8 +120,8 @@ export default function Profile() {
             <View style={styles.infoContent}>
               <Text style={styles.infoLabel}>Membro desde</Text>
               <Text style={styles.infoValue}>
-                {user?.createdAt 
-                  ? new Date(user.createdAt).toLocaleDateString('pt-BR')
+                {user?.metadata?.creationTime 
+                  ? new Date(user.metadata.creationTime).toLocaleDateString('pt-BR')
                   : "N/A"}
               </Text>
             </View>
@@ -136,6 +162,15 @@ export default function Profile() {
             </View>
           </View>
         </View>
+
+        {/* Botão de Sair */}
+        <TouchableOpacity 
+          style={styles.logoutButton}
+          onPress={handleLogout}
+        >
+          <Ionicons name="log-out-outline" size={24} color="#FF3B30" />
+          <Text style={styles.logoutText}>Sair da Conta</Text>
+        </TouchableOpacity>
       </View>
     </ScrollView>
   );
@@ -259,4 +294,27 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#666",
   },
+  logoutButton: {
+    backgroundColor: "#fff",
+    borderRadius: 12,
+    padding: 16,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: 20,
+    borderWidth: 1,
+    borderColor: "#FF3B30",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#FF3B30",
+    marginLeft: 8,
+  },
 });
+

@@ -9,7 +9,12 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "Este app precisa acessar sua câmera para escanear contas.",
+        "NSPhotoLibraryUsageDescription": "Este app precisa acessar suas fotos para você selecionar contas.",
+        "NSPhotoLibraryAddUsageDescription": "Este app precisa salvar fotos na sua galeria."
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -19,7 +24,13 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE",
+        "android.permission.WRITE_EXTERNAL_STORAGE",
+        "android.permission.READ_MEDIA_IMAGES"
+      ]
     },
     "web": {
       "output": "static",
@@ -37,6 +48,19 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Este app precisa acessar suas fotos para você selecionar contas.",
+          "cameraPermission": "Este app precisa acessar sua câmera para escanear contas."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Este app precisa acessar sua câmera para escanear contas."
         }
       ]
     ],
