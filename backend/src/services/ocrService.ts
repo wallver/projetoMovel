@@ -36,27 +36,45 @@ class OCRService {
 
   /**
    * Processa imagem e extrai texto usando OCR
+   * 
+   * Nota: A imagem é recebida em qualidade máxima (1.0) do frontend,
+   * o que melhora significativamente a precisão do OCR sem necessidade
+   * de pré-processamento adicional na maioria dos casos.
    */
   async processImage(imageBuffer: Buffer): Promise<OCRResult> {
     let fullText = '';
     let confidence = 0;
 
+    console.log('🔍 Iniciando processamento OCR...');
+    console.log('📸 Tamanho da imagem:', (imageBuffer.length / 1024).toFixed(2), 'KB');
+
     if (this.useLocalOCR) {
-      // Usar Tesseract (OCR local)
+      // Usar Tesseract (OCR local) com configurações otimizadas
+      console.log('🤖 Usando Tesseract OCR (local)');
       const result = await Tesseract.recognize(imageBuffer, 'por', {
-        logger: (m) => console.log('Tesseract:', m),
+        logger: (m) => {
+          if (m.status === 'recognizing text') {
+            console.log('Tesseract: Reconhecendo texto...', Math.round(m.progress * 100) + '%');
+          }
+        },
+        // Configurações otimizadas para contas/faturas
+        tessedit_pageseg_mode: Tesseract.PSM.AUTO,
+        preserve_interword_spaces: '1',
       });
       
       fullText = result.data.text;
       confidence = result.data.confidence;
+      console.log('✅ Tesseract concluído. Confiança:', confidence.toFixed(1) + '%');
     } else if (this.visionClient) {
       // Usar Google Vision API
+      console.log('🌐 Usando Google Vision API');
       const [result] = await this.visionClient.textDetection(imageBuffer);
       const detections = result.textAnnotations;
       
       if (detections && detections.length > 0) {
         fullText = detections[0].description || '';
         confidence = 90; // Google Vision não retorna confidence para text detection
+        console.log('✅ Google Vision concluído');
       }
     } else {
       throw new Error('Nenhum serviço de OCR configurado');
@@ -64,6 +82,14 @@ class OCRService {
 
     const lines = fullText.split('\n').filter(line => line.trim().length > 0);
     const detectedData = this.extractBillData(fullText);
+
+    // Log para debug
+    console.log('📝 Texto extraído (primeiras 5 linhas):');
+    lines.slice(0, 5).forEach(line => console.log('  -', line));
+    console.log('💰 Valor detectado:', detectedData.value || 'Não encontrado');
+    console.log('📅 Data detectada:', detectedData.dueDate ? detectedData.dueDate.toLocaleDateString('pt-BR') : 'Não encontrada');
+    console.log('🏢 Empresa detectada:', detectedData.company || 'Não identificada');
+    console.log('📊 Confiança:', confidence.toFixed(1) + '%');
 
     return {
       fullText,
@@ -79,20 +105,28 @@ class OCRService {
   private extractBillData(text: string): OCRResult['detectedData'] {
     const data: OCRResult['detectedData'] = {};
 
+    // Limpar texto para melhor análise
+    const cleanText = text.replace(/[|]/g, 'I').replace(/[l]/g, '1');
+
     // Extrair valor (busca por padrões específicos de contas brasileiras)
     const valuePatterns = [
-      // Padrão específico: "Total a pagar", "Valor Total", etc.
-      /(?:total\s*a\s*pagar|valor\s*total|total|valor|pagar)[:\s]*R?\$?\s*(\d{1,3}(?:[\.,]\d{3})*[,\.]\d{2})/gi,
-      // Padrão com R$
+      // Padrão específico: "Total a pagar", "Valor Total", etc. com contexto
+      /(?:total\s*a\s*pagar|valor\s*total|total\s+a\s+pagar|valor\s+a\s+pagar|total|pagar)[:\s=]*R?\$?\s*(\d{1,3}(?:[\.,]\d{3})*[,\.]\d{2})/gi,
+      // Padrão com R$ (prioridade alta)
       /R\$\s*(\d{1,3}(?:[\.,]\d{3})*[,\.]\d{2})/gi,
-      // Valores grandes (priorizar valores acima de 10 reais)
+      // Padrão de valores com "RS" ou "rs" (comum em OCR)
+      /(?:RS|rs)\s*(\d{1,3}(?:[\.,]\d{3})*[,\.]\d{2})/gi,
+      // Valores isolados em linha (geralmente destaque)
+      /^\s*(\d{1,3}(?:[\.,]\d{3})*[,\.]\d{2})\s*$/gm,
+      // Valores com pelo menos 2 casas decimais
       /(\d{2,3}(?:[\.,]\d{3})*[,\.]\d{2})/g,
     ];
 
-    const foundValues: number[] = [];
+    const foundValues: Array<{value: number, priority: number}> = [];
     
-    for (const pattern of valuePatterns) {
-      const matches = [...text.matchAll(pattern)];
+    for (let i = 0; i < valuePatterns.length; i++) {
+      const pattern = valuePatterns[i];
+      const matches = [...cleanText.matchAll(pattern)];
       for (const match of matches) {
         const valueStr = match[1] || match[0];
         // Normalizar: trocar pontos por nada e vírgulas por ponto
@@ -102,42 +136,54 @@ class OCRService {
           .replace(',', '.');
         
         const value = parseFloat(normalized);
-        if (!isNaN(value) && value >= 10 && value < 100000) {
-          foundValues.push(value);
+        // Ajustar range mínimo e máximo
+        if (!isNaN(value) && value >= 5 && value < 100000) {
+          // Dar prioridade maior para padrões mais específicos (índice menor)
+          const priority = 10 - i;
+          foundValues.push({ value, priority });
         }
       }
     }
 
-    // Pegar o maior valor encontrado (geralmente é o total)
+    // Pegar o maior valor dos mais prioritários
     if (foundValues.length > 0) {
-      data.value = Math.max(...foundValues);
+      foundValues.sort((a, b) => {
+        // Primeiro por prioridade, depois por valor
+        if (a.priority !== b.priority) return b.priority - a.priority;
+        return b.value - a.value;
+      });
+      data.value = foundValues[0].value;
     }
 
     // Extrair data de vencimento (formatos brasileiros)
     const datePatterns = [
-      // Com contexto de vencimento
-      /(?:vencimento|venc\.?|data\s*venc|pagar\s*até|pagamento)[:\s]*(\d{2}[\/\-\.]\d{2}[\/\-\.]\d{4}|\d{2}[\/\-\.]\d{2}[\/\-\.]\d{2})/gi,
+      // Com contexto de vencimento (prioridade máxima)
+      /(?:vencimento|venc\.?|vencto|data\s*de?\s*venc(?:imento)?|pagar\s*até|pagamento\s*até?|até)[:\s=]*(\d{2}[\/\-\.]\d{2}[\/\-\.]\d{4}|\d{2}[\/\-\.]\d{2}[\/\-\.]\d{2})/gi,
       // Formato completo DD/MM/YYYY ou DD-MM-YYYY
       /(\d{2}[\/\-\.]\d{2}[\/\-\.]\d{4})/g,
       // Formato curto DD/MM/YY ou DD-MM-YY
       /(\d{2}[\/\-\.]\d{2}[\/\-\.]\d{2})/g,
+      // Formato com espaços (OCR pode separar)
+      /(\d{2}\s*[\/\-\.]\s*\d{2}\s*[\/\-\.]\s*\d{2,4})/g,
     ];
 
-    const foundDates: Date[] = [];
+    const foundDates: Array<{date: Date, priority: number}> = [];
     const now = new Date();
-    const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-    const oneYearFromNow = new Date(now.getFullYear() + 1, now.getMonth(), now.getDate());
+    now.setHours(0, 0, 0, 0); // Resetar horas para comparação correta
+    const twoMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 2, now.getDate());
+    const twoYearsFromNow = new Date(now.getFullYear() + 2, now.getMonth(), now.getDate());
 
-    for (const pattern of datePatterns) {
-      const matches = [...text.matchAll(pattern)];
+    for (let i = 0; i < datePatterns.length; i++) {
+      const pattern = datePatterns[i];
+      const matches = [...cleanText.matchAll(pattern)];
       for (const match of matches) {
         const dateStr = match[1] || match[0];
-        const cleanDate = dateStr.match(/\d{2}[\/\-\.]\d{2}[\/\-\.]\d{2,4}/);
+        const cleanDate = dateStr.replace(/\s+/g, '').match(/\d{2}[\/\-\.]\d{2}[\/\-\.]\d{2,4}/);
         
         if (cleanDate) {
           const parts = cleanDate[0].split(/[\/\-\.]/);
-          const day = parseInt(parts[0]);
-          const month = parseInt(parts[1]);
+          let day = parseInt(parts[0]);
+          let month = parseInt(parts[1]);
           let year = parseInt(parts[2]);
           
           // Se ano com 2 dígitos, assumir século atual
@@ -145,27 +191,47 @@ class OCRService {
             year += 2000;
           }
           
-          const date = new Date(year, month - 1, day);
+          // Validar dia e mês antes de criar a data
+          if (day < 1 || day > 31 || month < 1 || month > 12) {
+            continue;
+          }
           
-          // Validar se a data faz sentido (entre 1 mês atrás e 1 ano no futuro)
+          const date = new Date(year, month - 1, day);
+          date.setHours(0, 0, 0, 0);
+          
+          // Validar se a data é válida e está dentro do range razoável
           if (!isNaN(date.getTime()) && 
-              date >= oneMonthAgo && 
-              date <= oneYearFromNow &&
-              day >= 1 && day <= 31 &&
-              month >= 1 && month <= 12) {
-            foundDates.push(date);
+              date >= twoMonthsAgo && 
+              date <= twoYearsFromNow &&
+              // Verificar se o dia existe no mês (ex: 31/02 é inválido)
+              date.getDate() === day &&
+              date.getMonth() === month - 1) {
+            
+            // Calcular prioridade: 
+            // - Maior para datas com contexto (vencimento)
+            // - Maior para datas futuras próximas
+            let priority = 5 - i; // Prioridade do padrão
+            
+            if (date >= now) {
+              // Data futura: adicionar prioridade extra
+              priority += 10;
+              // Quanto mais próxima, maior a prioridade (até 3 meses)
+              const daysUntil = Math.floor((date.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+              if (daysUntil <= 90) {
+                priority += (90 - daysUntil) / 30; // 0-3 pontos extra
+              }
+            }
+            
+            foundDates.push({ date, priority });
           }
         }
       }
     }
 
-    // Priorizar datas futuras (vencimento), pegar a mais próxima
-    const futureDates = foundDates.filter(d => d >= now);
-    if (futureDates.length > 0) {
-      data.dueDate = futureDates.sort((a, b) => a.getTime() - b.getTime())[0];
-    } else if (foundDates.length > 0) {
-      // Se não houver datas futuras, pegar a mais recente do passado
-      data.dueDate = foundDates.sort((a, b) => b.getTime() - a.getTime())[0];
+    // Pegar a data com maior prioridade
+    if (foundDates.length > 0) {
+      foundDates.sort((a, b) => b.priority - a.priority);
+      data.dueDate = foundDates[0].date;
     }
 
     // Extrair código de barras (vários formatos)

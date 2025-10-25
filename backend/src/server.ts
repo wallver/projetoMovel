@@ -15,8 +15,9 @@ app.use(cors({
   origin: process.env.ALLOWED_ORIGINS?.split(',') || '*',
   credentials: true,
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Aumentar limite para aceitar imagens grandes
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Middleware de log
 app.use((req: Request, res: Response, next: NextFunction) => {
@@ -42,13 +43,15 @@ app.use((err: any, req: Request, res: Response, next: NextFunction) => {
 });
 
 // Iniciar servidor
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log('\n🚀 ========================================');
   console.log(`📱 Servidor Bill Reminder rodando!`);
   console.log(`🔗 Porta: ${PORT}`);
   console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`📊 Health check local: http://localhost:${PORT}/api/health`);
+  console.log(`📱 Health check rede: http://192.168.1.2:${PORT}/api/health`);
   console.log(`⏰ Cron jobs iniciados`);
+  console.log(`🌐 Aceitando conexões de todas as interfaces (0.0.0.0)`);
   console.log('========================================\n');
 });
 
