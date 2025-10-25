@@ -32,6 +32,7 @@ export interface BillDocument {
   value: number;
   dueDate: FirebaseFirestore.Timestamp;
   barcode?: string;
+  pixCode?: string;
   imageUrl: string;
   thumbnailUrl?: string;
   status: 'PENDING' | 'PAID' | 'OVERDUE' | 'CANCELLED';

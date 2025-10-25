@@ -1,5 +1,7 @@
 import * as vision from '@google-cloud/vision';
 import Tesseract from 'tesseract.js';
+import jsQR from 'jsqr';
+import sharp from 'sharp';
 
 /**
  * Interface para resultado do OCR
@@ -12,6 +14,7 @@ export interface OCRResult {
     value?: number;
     dueDate?: Date;
     barcode?: string;
+    pixCode?: string;
     company?: string;
   };
 }
@@ -35,6 +38,45 @@ class OCRService {
   }
 
   /**
+   * Detecta QR Code na imagem e extrai código Pix
+   */
+  async detectQRCode(imageBuffer: Buffer): Promise<string | null> {
+    try {
+      console.log('🔍 Procurando QR Code...');
+      
+      // Converter imagem para formato que jsQR entende (RGBA)
+      const image = sharp(imageBuffer);
+      const { data, info } = await image
+        .ensureAlpha()
+        .raw()
+        .toBuffer({ resolveWithObject: true });
+
+      // Detectar QR Code
+      const code = jsQR(new Uint8ClampedArray(data), info.width, info.height);
+      
+      if (code && code.data) {
+        console.log('📱 QR Code detectado!');
+        
+        // Verificar se é código Pix (geralmente começa com "00020126" ou contém "BR.GOV.BCB.PIX")
+        const qrData = code.data;
+        if (qrData.includes('BR.GOV.BCB.PIX') || qrData.startsWith('00020')) {
+          console.log('💰 QR Code Pix identificado!');
+          return qrData;
+        } else {
+          console.log('⚠️ QR Code encontrado mas não é Pix');
+        }
+      } else {
+        console.log('❌ Nenhum QR Code encontrado');
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Erro ao detectar QR Code:', error);
+      return null;
+    }
+  }
+
+  /**
    * Processa imagem e extrai texto usando OCR
    * 
    * Nota: A imagem é recebida em qualidade máxima (1.0) do frontend,
@@ -47,6 +89,9 @@ class OCRService {
 
     console.log('🔍 Iniciando processamento OCR...');
     console.log('📸 Tamanho da imagem:', (imageBuffer.length / 1024).toFixed(2), 'KB');
+
+    // Tentar detectar QR Code Pix primeiro
+    const pixCode = await this.detectQRCode(imageBuffer);
 
     if (this.useLocalOCR) {
       // Usar Tesseract (OCR local) com configurações otimizadas
@@ -83,11 +128,18 @@ class OCRService {
     const lines = fullText.split('\n').filter(line => line.trim().length > 0);
     const detectedData = this.extractBillData(fullText);
 
+    // Adicionar código Pix se foi detectado
+    if (pixCode) {
+      detectedData.pixCode = pixCode;
+    }
+
     // Log para debug
     console.log('📝 Texto extraído (primeiras 5 linhas):');
     lines.slice(0, 5).forEach(line => console.log('  -', line));
     console.log('💰 Valor detectado:', detectedData.value || 'Não encontrado');
     console.log('📅 Data detectada:', detectedData.dueDate ? detectedData.dueDate.toLocaleDateString('pt-BR') : 'Não encontrada');
+    console.log('📊 Código de barras:', detectedData.barcode ? `${detectedData.barcode.substring(0, 15)}...` : 'Não encontrado');
+    console.log('💳 Código Pix:', detectedData.pixCode ? `${detectedData.pixCode.substring(0, 30)}...` : 'Não encontrado');
     console.log('🏢 Empresa detectada:', detectedData.company || 'Não identificada');
     console.log('📊 Confiança:', confidence.toFixed(1) + '%');
 
@@ -234,23 +286,51 @@ class OCRService {
       data.dueDate = foundDates[0].date;
     }
 
-    // Extrair código de barras (vários formatos)
+    // Extrair código de barras (linha digitável de boletos)
     const barcodePatterns = [
-      // Formato com pontos e espaços: 12345.67890 12345.678901 12345.678901 1 12345678901234
+      // Linha digitável padrão: 5 blocos (XXXXX.XXXXX XXXXX.XXXXXX XXXXX.XXXXXX X XXXXXXXXXXXXXXXX)
+      /(\d{5}[\.\s]?\d{5}[\s]+\d{5}[\.\s]?\d{6}[\s]+\d{5}[\.\s]?\d{6}[\s]+\d[\s]+\d{14})/g,
+      // Formato com pontos e espaços variados
       /(\d{5}[\.\s]?\d{5}[\s]?\d{5}[\.\s]?\d{6}[\s]?\d{5}[\.\s]?\d{6}[\s]?\d[\s]?\d{14})/g,
-      // Formato contínuo: 48 dígitos seguidos
-      /(\d{48})/g,
-      // Formato de linha digitável
-      /(\d{5}[\.\s]?\d{5}[\s]?\d{5}[\.\s]?\d{6}[\s]?\d{5}[\.\s]?\d{6}[\s]?\d[\s]?\d{14})/g,
+      // Formato sem espaços mas com pontos
+      /(\d{5}\.\d{5}\d{5}\.\d{6}\d{5}\.\d{6}\d\d{14})/g,
+      // Formato contínuo: 47-48 dígitos seguidos
+      /(\d{47,48})/g,
+      // Busca por sequência de muitos dígitos (última tentativa)
+      /(\d{44,50})/g,
     ];
 
+    const foundBarcodes: string[] = [];
+
     for (const pattern of barcodePatterns) {
-      const barcodeMatch = text.match(pattern);
-      if (barcodeMatch && barcodeMatch[0]) {
-        const cleanBarcode = barcodeMatch[0].replace(/[^\d]/g, '');
+      const matches = [...cleanText.matchAll(pattern)];
+      for (const match of matches) {
+        const barcodeStr = match[1] || match[0];
+        // Limpar: remover tudo exceto dígitos
+        const cleanBarcode = barcodeStr.replace(/[^\d]/g, '');
+        
+        // Validar tamanho (linha digitável tem 47 ou 48 dígitos)
         if (cleanBarcode.length >= 44 && cleanBarcode.length <= 48) {
-          data.barcode = cleanBarcode;
-          break;
+          foundBarcodes.push(cleanBarcode);
+        }
+      }
+    }
+
+    // Pegar o código mais longo encontrado (geralmente o correto)
+    if (foundBarcodes.length > 0) {
+      foundBarcodes.sort((a, b) => b.length - a.length);
+      data.barcode = foundBarcodes[0];
+      
+      // Formatar para exibição legível (adicionar pontos e espaços)
+      if (data.barcode.length === 47 || data.barcode.length === 48) {
+        // Formato: XXXXX.XXXXX XXXXX.XXXXXX XXXXX.XXXXXX X XXXXXXXXXXXXXXXX
+        const formatted = data.barcode.replace(
+          /(\d{5})(\d{5})(\d{5})(\d{6})(\d{5})(\d{6})(\d{1})(\d{14})/,
+          '$1.$2 $3.$4 $5.$6 $7 $8'
+        );
+        // Salvar formatado se deu match
+        if (formatted !== data.barcode && formatted.length > data.barcode.length) {
+          data.barcode = data.barcode; // Manter limpo no banco
         }
       }
     }
@@ -285,6 +365,29 @@ class OCRService {
     }
 
     return data;
+  }
+
+  /**
+   * Formata código de barras para exibição legível
+   */
+  formatBarcode(barcode: string): string {
+    if (!barcode) return '';
+    
+    // Remover formatação existente
+    const clean = barcode.replace(/[^\d]/g, '');
+    
+    // Formatar linha digitável (47-48 dígitos)
+    if (clean.length === 47 || clean.length === 48) {
+      // Formato: XXXXX.XXXXX XXXXX.XXXXXX XXXXX.XXXXXX X XXXXXXXXXXXXXXXX
+      const formatted = clean.replace(
+        /(\d{5})(\d{5})(\d{5})(\d{6})(\d{5})(\d{6})(\d{1})(\d{14})/,
+        '$1.$2 $3.$4 $5.$6 $7 $8'
+      );
+      return formatted;
+    }
+    
+    // Se não conseguir formatar, retornar com espaços a cada 4 dígitos (facilita leitura)
+    return clean.replace(/(\d{4})/g, '$1 ').trim();
   }
 
   /**
