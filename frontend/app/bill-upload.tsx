@@ -56,8 +56,11 @@ export default function BillUploadScreen() {
               },
             },
             {
-              text: 'OK',
-              onPress: () => router.back(),
+              text: 'Voltar',
+              onPress: () => {
+                // Voltar para a tela de bills (que vai recarregar automaticamente)
+                router.back();
+              },
             },
           ]
         );

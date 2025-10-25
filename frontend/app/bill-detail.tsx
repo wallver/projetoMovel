@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   TextInput,
   Modal,
+  Clipboard,
 } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -55,7 +56,7 @@ export default function BillDetailScreen() {
 
       Alert.alert('Sucesso', 'Conta atualizada com sucesso!');
       setEditMode(false);
-      loadBill();
+      await loadBill(); // Recarregar dados atualizados
     } catch (error) {
       console.error('Erro ao atualizar conta:', error);
       Alert.alert('Erro', 'Não foi possível atualizar a conta');
@@ -73,8 +74,14 @@ export default function BillDetailScreen() {
           onPress: async () => {
             try {
               await billService.markBillAsPaid(billId);
-              Alert.alert('Sucesso', 'Conta marcada como paga! 🎉');
-              loadBill();
+              Alert.alert('Sucesso', 'Conta marcada como paga! 🎉', [
+                {
+                  text: 'OK',
+                  onPress: () => {
+                    loadBill(); // Recarregar para mostrar novo status
+                  },
+                },
+              ]);
             } catch (error) {
               Alert.alert('Erro', 'Não foi possível marcar como paga');
             }
@@ -105,6 +112,39 @@ export default function BillDetailScreen() {
         },
       ]
     );
+  };
+
+  const handleCopyBarcode = () => {
+    if (bill?.barcode) {
+      Clipboard.setString(bill.barcode);
+      Alert.alert('✅ Copiado!', 'Código de barras copiado para a área de transferência');
+    }
+  };
+
+  const handleCopyPix = () => {
+    if (bill?.pixCode) {
+      Clipboard.setString(bill.pixCode);
+      Alert.alert('✅ Copiado!', 'Código Pix Copia e Cola copiado para a área de transferência');
+    }
+  };
+
+  const formatBarcode = (barcode: string): string => {
+    if (!barcode) return '';
+    
+    // Remover formatação existente
+    const clean = barcode.replace(/[^\d]/g, '');
+    
+    // Formatar linha digitável (47-48 dígitos)
+    if (clean.length === 47 || clean.length === 48) {
+      // Formato: XXXXX.XXXXX XXXXX.XXXXXX XXXXX.XXXXXX X XXXXXXXXXXXXXXXX
+      return clean.replace(
+        /(\d{5})(\d{5})(\d{5})(\d{6})(\d{5})(\d{6})(\d{1})(\d{14})/,
+        '$1.$2 $3.$4 $5.$6 $7 $8'
+      );
+    }
+    
+    // Se não conseguir formatar, retornar com espaços a cada 4 dígitos
+    return clean.replace(/(\d{4})/g, '$1 ').trim();
   };
 
   const formatCurrency = (value: number) => {
@@ -269,13 +309,51 @@ export default function BillDetailScreen() {
                 </View>
               </View>
 
-              {bill.barcode && (
-                <View style={styles.infoRow}>
-                  <Ionicons name="barcode" size={20} color="#666" />
-                  <View style={styles.infoTextContainer}>
-                    <Text style={styles.infoLabel}>Código de Barras</Text>
-                    <Text style={styles.barcodeText}>{bill.barcode}</Text>
+              {bill.pixCode && (
+                <View style={styles.pixContainer}>
+                  <View style={styles.pixHeader}>
+                    <Ionicons name="qr-code" size={24} color="#32BCAD" />
+                    <Text style={styles.pixLabel}>Pix Copia e Cola</Text>
+                    <View style={styles.pixBadge}>
+                      <Text style={styles.pixBadgeText}>Recomendado</Text>
+                    </View>
                   </View>
+                  <View style={styles.pixContent}>
+                    <Text style={styles.pixText} numberOfLines={2} selectable>
+                      {bill.pixCode}
+                    </Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.copyButtonPix} 
+                    onPress={handleCopyPix}
+                  >
+                    <Ionicons name="copy-outline" size={18} color="#FFF" />
+                    <Text style={styles.copyButtonPixText}>Copiar Código Pix</Text>
+                  </TouchableOpacity>
+                  <Text style={styles.pixHint}>
+                    💡 Copie e cole no app do seu banco para pagar instantaneamente
+                  </Text>
+                </View>
+              )}
+
+              {bill.barcode && (
+                <View style={styles.barcodeContainer}>
+                  <View style={styles.barcodeHeader}>
+                    <Ionicons name="barcode" size={20} color="#666" />
+                    <Text style={styles.barcodeLabel}>Código de Barras</Text>
+                  </View>
+                  <View style={styles.barcodeContent}>
+                    <Text style={styles.barcodeText} selectable>
+                      {formatBarcode(bill.barcode)}
+                    </Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.copyButton} 
+                    onPress={handleCopyBarcode}
+                  >
+                    <Ionicons name="copy-outline" size={18} color="#007AFF" />
+                    <Text style={styles.copyButtonText}>Copiar Código</Text>
+                  </TouchableOpacity>
                 </View>
               )}
 
@@ -450,10 +528,123 @@ const styles = StyleSheet.create({
     color: '#F44336',
     fontWeight: '600',
   },
-  barcodeText: {
-    fontSize: 14,
+  pixContainer: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: '#E8F5F4',
+    borderRadius: 12,
+    borderWidth: 2,
+    borderColor: '#32BCAD',
+  },
+  pixHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  pixLabel: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#32BCAD',
+    marginLeft: 8,
+    flex: 1,
+  },
+  pixBadge: {
+    backgroundColor: '#32BCAD',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  pixBadgeText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  pixContent: {
+    backgroundColor: '#FFF',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#32BCAD',
+    marginBottom: 12,
+    maxHeight: 60,
+  },
+  pixText: {
+    fontSize: 11,
     fontFamily: 'monospace',
     color: '#333',
+    lineHeight: 16,
+  },
+  copyButtonPix: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#32BCAD',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginBottom: 8,
+  },
+  copyButtonPixText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#FFF',
+    marginLeft: 6,
+  },
+  pixHint: {
+    fontSize: 12,
+    color: '#32BCAD',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  barcodeContainer: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: '#F8F9FA',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+  },
+  barcodeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  barcodeLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+    marginLeft: 8,
+  },
+  barcodeContent: {
+    backgroundColor: '#FFF',
+    padding: 12,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#E0E0E0',
+    marginBottom: 12,
+  },
+  barcodeText: {
+    fontSize: 13,
+    fontFamily: 'monospace',
+    color: '#333',
+    lineHeight: 20,
+  },
+  copyButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#E3F2FD',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  copyButtonText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#007AFF',
+    marginLeft: 6,
   },
   notesContainer: {
     marginTop: 16,

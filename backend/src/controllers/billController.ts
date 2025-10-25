@@ -76,6 +76,7 @@ class BillController {
         value: ocrResult.detectedData.value || 0,
         dueDate: dateToTimestamp(ocrResult.detectedData.dueDate || new Date()),
         barcode: ocrResult.detectedData.barcode,
+        pixCode: ocrResult.detectedData.pixCode, // Adicionar código Pix
         imageUrl,
         ocrData: ocrResult,
         ocrConfidence: ocrResult.confidence,

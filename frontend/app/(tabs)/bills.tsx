@@ -9,7 +9,7 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../utils/firebase';
 import * as billService from '../services/billService';
@@ -26,6 +26,14 @@ export default function BillsScreen() {
     loadBills();
     loadStats();
   }, [filter]);
+
+  // Recarregar quando a tela ganhar foco (volta de outra tela)
+  useFocusEffect(
+    useCallback(() => {
+      loadBills();
+      loadStats();
+    }, [filter])
+  );
 
   const loadBills = async () => {
     try {
