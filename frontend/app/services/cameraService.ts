@@ -62,9 +62,9 @@ export const takePicture = async (): Promise<string | null> => {
 
     const result = await ImagePicker.launchCameraAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
+      allowsEditing: false, // Não forçar recorte para capturar a conta completa
+      quality: 0.9, // Alta qualidade (90%) - equilíbrio entre qualidade OCR e tamanho
+      exif: false, // Reduzir tamanho dos metadados
     });
 
     if (result.canceled) {
@@ -89,9 +89,9 @@ export const pickImageFromGallery = async (): Promise<string | null> => {
 
     const result = await ImagePicker.launchImageLibraryAsync({
       mediaTypes: ['images'],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
+      allowsEditing: false, // Não forçar recorte para ver a conta completa
+      quality: 0.9, // Alta qualidade (90%) - equilíbrio entre qualidade OCR e tamanho
+      exif: false,
     });
 
     if (result.canceled) {

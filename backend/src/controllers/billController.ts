@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import firestoreService from '../services/firestoreService';
 import ocrService from '../services/ocrService';
 import reminderService from '../services/reminderService';
-import { dateToTimestamp } from '../config/firestore';
+import { dateToTimestamp, serializeDoc } from '../config/firestore';
 import { getStorage } from 'firebase-admin/storage';
 
 /**
@@ -93,10 +93,10 @@ class BillController {
       return res.status(201).json({
         success: true,
         message: 'Conta processada com sucesso',
-        bill: {
+        bill: serializeDoc({
           ...bill,
           needsReview: !ocrResult.detectedData.value || !ocrResult.detectedData.dueDate,
-        },
+        }),
         ocrResult: {
           confidence: ocrResult.confidence,
           detectedData: ocrResult.detectedData,
@@ -129,7 +129,7 @@ class BillController {
 
       return res.json({
         success: true,
-        bills,
+        bills: bills.map(bill => serializeDoc(bill)),
         pagination: {
           total: bills.length,
           limit: Number(limit),
@@ -154,7 +154,7 @@ class BillController {
         return res.status(404).json({ error: 'Conta não encontrada' });
       }
 
-      return res.json({ success: true, bill });
+      return res.json({ success: true, bill: serializeDoc(bill) });
     } catch (error: any) {
       console.error('❌ Erro ao buscar conta:', error);
       return res.status(500).json({ error: 'Erro ao buscar conta', message: error.message });
@@ -183,11 +183,19 @@ class BillController {
       if (barcode !== undefined) updateData.barcode = barcode;
       
       if (dueDate !== undefined) {
-        const newDueDate = new Date(dueDate);
-        updateData.dueDate = dateToTimestamp(newDueDate);
-        
-        // Atualizar lembretes se a data mudou
-        await reminderService.updateRemindersForBill(billId, newDueDate);
+        try {
+          updateData.dueDate = dateToTimestamp(dueDate);
+          
+          // Atualizar lembretes se a data mudou
+          const dueDateObj = new Date(dueDate);
+          await reminderService.updateRemindersForBill(billId, dueDateObj);
+        } catch (error: any) {
+          console.error('Erro ao processar data de vencimento:', error);
+          return res.status(400).json({ 
+            error: 'Data de vencimento inválida',
+            message: error.message 
+          });
+        }
       }
 
       await firestoreService.updateBill(billId, updateData);
@@ -246,7 +254,10 @@ class BillController {
 
       return res.json({
         success: true,
-        stats,
+        stats: {
+          ...stats,
+          upcomingBills: stats.upcomingBills ? stats.upcomingBills.map((bill: any) => serializeDoc(bill)) : [],
+        },
       });
     } catch (error: any) {
       console.error('❌ Erro ao buscar estatísticas:', error);

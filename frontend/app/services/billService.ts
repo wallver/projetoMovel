@@ -63,7 +63,9 @@ export const uploadBill = async (imageUri: string, userId: string) => {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'multipart/form-data',
       },
-      timeout: 30000, // 30 segundos
+      timeout: 120000, // 2 minutos (para imagens grandes e OCR)
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
     });
 
     return response.data;
