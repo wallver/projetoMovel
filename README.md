@@ -383,8 +383,8 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ## 👥 Autores
 
-- **Seu Nome** - *Desenvolvimento inicial*
-- **Colaboradores** - Veja a lista de [contribuidores](https://github.com/seu-usuario/projetoMovel/contributors)
+- **Wallace da Silva Francisco** - *Desenvolvimento inicial*
+- **Willian Luiz Iamarino Gandolphi** - Veja a lista de [contribuidores](https://github.com/seu-usuario/projetoMovel/contributors)
 
 ## 📞 Contato
 
