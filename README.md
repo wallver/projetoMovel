@@ -295,47 +295,6 @@ npm test
 cd frontend
 npm test
 ```
-
-## 📝 Variáveis de Ambiente
-
-### Backend (.env)
-```env
-PORT=3001
-NODE_ENV=development
-
-# Firebase Admin SDK
-FIREBASE_PROJECT_ID=lembretecontas
-FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
-FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@lembretecontas.iam.gserviceaccount.com
-FIREBASE_STORAGE_BUCKET=lembretecontas.firebasestorage.app
-
-# OCR
-USE_LOCAL_OCR=true
-# GOOGLE_VISION_API_KEY=sua-chave (opcional, para OCR mais preciso)
-```
-
-### Frontend (.env)
-
-**Para mesma rede WiFi:**
-```env
-EXPO_PUBLIC_API_URL=http://192.168.1.100:3001/api
-
-# Firebase Client SDK
-EXPO_PUBLIC_FIREBASE_API_KEY=AIzaSyBW85iYMpE7yCu6XDNohHTmr80N11-FWUI
-EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=lembretecontas.firebaseapp.com
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=lembretecontas
-EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=lembretecontas.firebasestorage.app
-EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=853973539596
-EXPO_PUBLIC_FIREBASE_APP_ID=1:853973539596:web:010e651e5414d4b2690729
-EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=G-S88VBFRSEF
-```
-
-**Para redes diferentes (com ngrok):**
-```env
-EXPO_PUBLIC_API_URL=https://sua-url.ngrok-free.app/api
-# ... resto das variáveis Firebase igual
-```
-
 ## 🎯 Como Usar
 
 ### 📱 Mesma Rede WiFi (Recomendado para desenvolvimento local)
