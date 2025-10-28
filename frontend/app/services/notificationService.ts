@@ -14,6 +14,8 @@ Notifications.setNotificationHandler({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
   }),
 });
 
@@ -92,8 +94,9 @@ export const scheduleLocalNotification = async (
       },
       trigger:
         typeof trigger === 'number'
-          ? { seconds: trigger }
+          ? { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: trigger }
           : {
+              type: Notifications.SchedulableTriggerInputTypes.DATE,
               date: trigger,
               channelId: 'reminders',
             },
@@ -145,7 +148,10 @@ export const fetchNotifications = async (userId: string, limit: number = 50) => 
     const token = await getAuthToken();
 
     const response = await axios.get(`${API_URL}/notifications/${userId}?limit=${limit}`, {
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'ngrok-skip-browser-warning': 'true',
+      },
     });
 
     return response.data;
@@ -165,7 +171,12 @@ export const markNotificationAsRead = async (notificationId: string) => {
     const response = await axios.put(
       `${API_URL}/notifications/${notificationId}/read`,
       {},
-      { headers: { 'Authorization': `Bearer ${token}` } }
+      { 
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true',
+        } 
+      }
     );
 
     return response.data;
@@ -185,7 +196,12 @@ export const markAllNotificationsAsRead = async (userId: string) => {
     const response = await axios.put(
       `${API_URL}/notifications/${userId}/read-all`,
       {},
-      { headers: { 'Authorization': `Bearer ${token}` } }
+      { 
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'ngrok-skip-browser-warning': 'true',
+        } 
+      }
     );
 
     return response.data;
@@ -203,7 +219,10 @@ export const countUnreadNotifications = async (userId: string) => {
     const token = await getAuthToken();
 
     const response = await axios.get(`${API_URL}/notifications/${userId}/unread-count`, {
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers: { 
+        'Authorization': `Bearer ${token}`,
+        'ngrok-skip-browser-warning': 'true',
+      },
     });
 
     return response.data;

@@ -153,16 +153,65 @@ curl http://localhost:3001/api/health
 
 ### ❌ Frontend não conecta no backend
 **Solução:**
+
+#### 📱 Para celular na **mesma rede WiFi**:
 1. Verifique se o backend está rodando (`http://localhost:3001/api/health`)
-2. No `frontend/.env`, ajuste `EXPO_PUBLIC_API_URL` com seu IP local:
+2. Descubra seu IP local:
    ```bash
-   # Windows: ipconfig
-   # Mac/Linux: ifconfig
+   # Windows: 
+   ipconfig
+   # Procure por "Endereço IPv4" (ex: 192.168.1.100)
+   
+   # Mac/Linux: 
+   ifconfig
+   # Procure por "inet" (ex: 192.168.1.100)
    ```
+3. Crie o arquivo `frontend/.env` (copie de `env.example`) e ajuste:
    ```env
    EXPO_PUBLIC_API_URL=http://SEU_IP:3001/api
+   # Exemplo: EXPO_PUBLIC_API_URL=http://192.168.1.100:3001/api
    ```
-3. Backend e celular devem estar na **mesma rede WiFi**
+4. Inicie o frontend:
+   ```bash
+   cd frontend
+   npm start
+   ```
+
+#### 🌐 Para celular em **rede diferente** (usando tunnel):
+
+**Opção 1: Usando ngrok (RECOMENDADO)**
+
+1. Instale o ngrok:
+   - Acesse: https://ngrok.com/
+   - Crie conta grátis
+   - Baixe e instale
+
+2. Em um terminal, exponha o backend:
+   ```bash
+   ngrok http 3001
+   ```
+
+3. Copie a URL gerada (ex: `https://abc123.ngrok-free.app`)
+
+4. No arquivo `frontend/.env`:
+   ```env
+   EXPO_PUBLIC_API_URL=https://abc123.ngrok-free.app/api
+   ```
+
+5. Reinicie o frontend:
+   ```bash
+   cd frontend
+   npm start -- --tunnel
+   ```
+
+**Opção 2: Usando Expo Tunnel (somente para frontend)**
+
+⚠️ **ATENÇÃO:** O tunnel do Expo (`--tunnel`) só expõe o **frontend**, o backend ainda fica local!
+- Para funcionar, você **PRECISA** expor o backend também (use ngrok na Opção 1)
+
+**Opção 3: Deploy do backend em nuvem**
+- Heroku, Railway, Render, etc.
+- Configure `EXPO_PUBLIC_API_URL` com a URL do deploy
 
 ### ❌ OCR não funciona
 **Solução:** O OCR local (Tesseract) está configurado. Para melhor precisão:

@@ -29,6 +29,10 @@ const syncUserWithBackend = async (firebaseUid: string, email: string, username:
       firebaseUid,
       email,
       username,
+    }, {
+      headers: {
+        'ngrok-skip-browser-warning': 'true', // Pula o aviso do ngrok
+      },
     });
     console.log('✅ Usuário sincronizado com backend');
   } catch (error) {

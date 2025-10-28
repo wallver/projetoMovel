@@ -38,10 +38,10 @@ Sistema inteligente para gerenciamento de contas domésticas com reconhecimento 
 ### Pré-requisitos
 
 - Node.js 18+
-- PostgreSQL 14+
+- Conta no Firebase (com Firestore e Storage ativos)
 - Expo CLI
-- Conta no Firebase
 - Celular com Expo Go instalado
+- **ngrok** (para acesso remoto - opcional)
 
 ### Instalação Rápida
 
@@ -54,8 +54,7 @@ cd projetoMovel
 cd backend
 npm install
 cp .env.example .env
-# Edite o .env com suas credenciais
-npx prisma migrate dev
+# Edite o .env com suas credenciais do Firebase
 npm run dev
 
 # Configure o frontend (em outro terminal)
@@ -66,7 +65,34 @@ cp env.example .env
 npm start
 ```
 
-Para instruções detalhadas, consulte [SETUP_COMPLETO.md](./documentacao/SETUP_COMPLETO.md)
+### 🌐 Configuração para Acesso Remoto (celular em rede diferente)
+
+Se seu celular **não estiver na mesma rede WiFi** que seu computador:
+
+```bash
+# 1. Instale o ngrok
+# Acesse: https://ngrok.com/ e crie uma conta grátis
+# Baixe e instale o ngrok
+
+# 2. Configure seu authtoken
+ngrok config add-authtoken SEU_AUTHTOKEN
+
+# 3. Exponha o backend (em um novo terminal)
+ngrok http 3001
+
+# 4. Copie a URL gerada (ex: https://abc123.ngrok-free.app)
+
+# 5. No frontend/.env, configure:
+EXPO_PUBLIC_API_URL=https://abc123.ngrok-free.app/api
+
+# 6. Inicie o frontend com tunnel
+cd frontend
+npx expo start --tunnel
+```
+
+**📚 Documentação Completa:**
+- [INICIAR_PROJETO.md](./INICIAR_PROJETO.md) - Como iniciar o projeto passo a passo
+- [NGROK_SETUP.md](./NGROK_SETUP.md) - Guia completo sobre ngrok para acesso remoto
 
 ## 📁 Estrutura do Projeto
 
@@ -107,11 +133,11 @@ projetoMovel/
 ### Backend
 - **Node.js + Express** - API REST
 - **TypeScript** - Tipagem estática
-- **Prisma ORM** - ORM moderno
-- **PostgreSQL** - Banco de dados
+- **Firebase Firestore** - Banco de dados NoSQL
 - **Firebase Admin** - Autenticação e Storage
-- **Tesseract.js / Google Vision** - OCR
+- **Tesseract.js** - OCR local
 - **Node-cron** - Agendamento de tarefas
+- **Multer** - Upload de arquivos
 
 ### Frontend
 - **React Native** - Framework mobile
@@ -143,16 +169,38 @@ projetoMovel/
 - Senhas criptografadas
 - CORS configurado
 
-## 📊 Banco de Dados
+## 📊 Banco de Dados (Firestore)
 
-### Entidades Principais
+### Collections Principais
 
-- **User** - Usuários do sistema
-- **Bill** - Contas cadastradas
-- **Reminder** - Lembretes agendados
-- **Notification** - Histórico de notificações
+- **users** - Usuários do sistema
+  ```
+  users/{userId}
+  ├── email
+  ├── username
+  └── createdAt
+  ```
 
-Veja o schema completo em `backend/prisma/schema.prisma`
+- **bills** - Contas cadastradas
+  ```
+  bills/{billId}
+  ├── userId
+  ├── title
+  ├── value
+  ├── dueDate
+  ├── imageUrl
+  ├── status
+  └── reminders/ (subcollection)
+  ```
+
+- **notifications** - Histórico de notificações
+  ```
+  notifications/{notificationId}
+  ├── userId
+  ├── title
+  ├── message
+  └── sentAt
+  ```
 
 ## 🔄 Fluxo de Dados
 
@@ -160,14 +208,81 @@ Veja o schema completo em `backend/prisma/schema.prisma`
 1. Usuário tira foto da conta
 2. Frontend envia imagem para backend
 3. Backend salva no Firebase Storage
-4. Backend processa com OCR
-5. Backend extrai dados (valor, vencimento)
-6. Backend salva conta no PostgreSQL
+4. Backend processa com OCR (Tesseract)
+5. Backend extrai dados (valor, vencimento, tipo)
+6. Backend salva conta no Firestore
 7. Backend cria lembretes automáticos
-8. Cron job verifica lembretes periodicamente
-9. Backend envia notificação push
+8. Cron job verifica lembretes periodicamente (a cada 1 hora)
+9. Backend envia notificação push via Firebase
 10. Frontend exibe notificação ao usuário
 ```
+
+## 🔧 Troubleshooting
+
+### ❌ Frontend não conecta ao backend
+
+**Problema:** App não consegue se comunicar com o backend
+
+**Solução para mesma rede WiFi:**
+1. Verifique se o backend está rodando: `http://localhost:3001/api/health`
+2. Descubra seu IP: `ipconfig` (Windows) ou `ifconfig` (Mac/Linux)
+3. Configure `frontend/.env`: `EXPO_PUBLIC_API_URL=http://SEU_IP:3001/api`
+4. Reinicie o frontend
+
+**Solução para redes diferentes:**
+1. Certifique-se que o ngrok está rodando: `ngrok http 3001`
+2. Copie a URL HTTPS do ngrok
+3. Configure `frontend/.env`: `EXPO_PUBLIC_API_URL=https://abc123.ngrok-free.app/api`
+4. **Não esqueça** do `/api` no final!
+5. Reinicie o frontend com `--tunnel`: `npx expo start --tunnel`
+
+### ❌ Erro "authentication failed" no ngrok
+
+**Problema:** ngrok retorna erro de autenticação
+
+**Solução:**
+1. Acesse: https://dashboard.ngrok.com/get-started/your-authtoken
+2. Copie SEU authtoken (não use o exemplo da documentação!)
+3. Execute: `ngrok config add-authtoken SEU_AUTHTOKEN`
+4. Tente novamente: `ngrok http 3001`
+
+### ❌ ngrok "Route not found"
+
+**Problema:** Browser mostra `{"error": "Rota não encontrada"}`
+
+**Solução:** Você acessou `/api` ao invés de `/api/health`
+- ✅ Correto: `https://sua-url.ngrok-free.app/api/health`
+- ❌ Errado: `https://sua-url.ngrok-free.app/api`
+
+### ⚠️ ngrok exibe página de aviso
+
+**Problema:** Ao acessar a URL do ngrok no navegador, aparece uma página "You are about to visit..."
+
+**Solução:** Isso é **normal** para contas gratuitas!
+- Clique em **"Visit Site"** para continuar
+- Esse aviso só aparece no navegador na primeira vez
+- O app mobile **não** mostra essa tela - as requisições funcionam diretamente
+- Se necessário, pode-se adicionar o header `ngrok-skip-browser-warning` nas requisições
+
+### ❌ Firestore "Permission denied"
+
+**Problema:** Erro de permissão no Firestore
+
+**Solução:**
+1. Acesse: https://console.firebase.google.com/
+2. Vá em **Firestore Database** → **Regras**
+3. Verifique se as regras de segurança estão configuradas (veja [INICIAR_PROJETO.md](./INICIAR_PROJETO.md))
+4. Certifique-se que o Authentication está ativo
+
+### ❌ OCR não funciona / não extrai dados
+
+**Problema:** OCR não consegue ler os dados da conta
+
+**Solução:**
+1. Tire fotos **nítidas** e **bem iluminadas**
+2. Evite fotos tremidas ou com sombras
+3. Centralize o documento na foto
+4. Se necessário, edite os dados manualmente após o upload
 
 ## 🧪 Testes
 
@@ -185,31 +300,113 @@ npm test
 
 ### Backend (.env)
 ```env
-DATABASE_URL=postgresql://...
 PORT=3001
-FIREBASE_PROJECT_ID=...
-FIREBASE_PRIVATE_KEY=...
-FIREBASE_CLIENT_EMAIL=...
+NODE_ENV=development
+
+# Firebase Admin SDK
+FIREBASE_PROJECT_ID=lembretecontas
+FIREBASE_PRIVATE_KEY="-----BEGIN PRIVATE KEY-----\n...\n-----END PRIVATE KEY-----\n"
+FIREBASE_CLIENT_EMAIL=firebase-adminsdk-xxxxx@lembretecontas.iam.gserviceaccount.com
+FIREBASE_STORAGE_BUCKET=lembretecontas.firebasestorage.app
+
+# OCR
 USE_LOCAL_OCR=true
+# GOOGLE_VISION_API_KEY=sua-chave (opcional, para OCR mais preciso)
 ```
 
 ### Frontend (.env)
+
+**Para mesma rede WiFi:**
 ```env
 EXPO_PUBLIC_API_URL=http://192.168.1.100:3001/api
-EXPO_PUBLIC_FIREBASE_API_KEY=...
-EXPO_PUBLIC_FIREBASE_PROJECT_ID=...
+
+# Firebase Client SDK
+EXPO_PUBLIC_FIREBASE_API_KEY=AIzaSyBW85iYMpE7yCu6XDNohHTmr80N11-FWUI
+EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN=lembretecontas.firebaseapp.com
+EXPO_PUBLIC_FIREBASE_PROJECT_ID=lembretecontas
+EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET=lembretecontas.firebasestorage.app
+EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=853973539596
+EXPO_PUBLIC_FIREBASE_APP_ID=1:853973539596:web:010e651e5414d4b2690729
+EXPO_PUBLIC_FIREBASE_MEASUREMENT_ID=G-S88VBFRSEF
+```
+
+**Para redes diferentes (com ngrok):**
+```env
+EXPO_PUBLIC_API_URL=https://sua-url.ngrok-free.app/api
+# ... resto das variáveis Firebase igual
+```
+
+## 🎯 Como Usar
+
+### 📱 Mesma Rede WiFi (Recomendado para desenvolvimento local)
+
+1. Inicie o backend: `cd backend && npm run dev`
+2. Descubra seu IP local: `ipconfig` (Windows) ou `ifconfig` (Mac/Linux)
+3. Configure `frontend/.env`: `EXPO_PUBLIC_API_URL=http://SEU_IP:3001/api`
+4. Inicie o frontend: `cd frontend && npm start`
+5. Escaneie o QR Code no app Expo Go
+
+### 🌐 Redes Diferentes (Usando ngrok)
+
+1. Inicie o backend: `cd backend && npm run dev`
+2. Exponha com ngrok: `ngrok http 3001`
+3. Copie a URL gerada (ex: `https://abc123.ngrok-free.app`)
+4. Configure `frontend/.env`: `EXPO_PUBLIC_API_URL=https://abc123.ngrok-free.app/api`
+5. Inicie o frontend: `cd frontend && npx expo start --tunnel`
+6. Escaneie o QR Code no app Expo Go
+
+**⚠️ Importante:** 
+- Mantenha o ngrok rodando enquanto usa o app
+- A URL do ngrok muda a cada reinicialização (plano gratuito)
+- Atualize o `.env` quando a URL mudar
+
+### 💻 Estrutura de Terminais
+
+**Para mesma rede WiFi (2 terminais):**
+```
+Terminal 1: Backend
+├─ cd backend
+└─ npm run dev
+   ✅ http://localhost:3001
+
+Terminal 2: Frontend
+├─ cd frontend
+└─ npm start
+   ✅ Expo Metro Bundler
+```
+
+**Para redes diferentes (3 terminais):**
+```
+Terminal 1: Backend
+├─ cd backend
+└─ npm run dev
+   ✅ http://localhost:3001
+
+Terminal 2: ngrok
+└─ ngrok http 3001
+   ✅ https://abc123.ngrok-free.app → localhost:3001
+
+Terminal 3: Frontend
+├─ cd frontend
+└─ npx expo start --tunnel
+   ✅ Expo Metro Bundler + Tunnel
 ```
 
 ## 🚧 Roadmap
 
+- [x] Sistema de autenticação com Firebase
+- [x] Upload e OCR de contas
+- [x] Lembretes automáticos (3 dias, 1 dia, no dia)
+- [x] Notificações push
+- [x] Dashboard com estatísticas
 - [ ] Suporte para múltiplas moedas
 - [ ] Integração com bancos (Open Banking)
 - [ ] Exportação de relatórios (PDF)
 - [ ] Modo escuro
-- [ ] Reconhecimento de QR Code
+- [ ] Reconhecimento de código de barras/QR Code
 - [ ] Compartilhamento de contas (família)
 - [ ] Categorização automática de gastos
-- [ ] Dashboard com gráficos
+- [ ] Dashboard com gráficos avançados
 
 ## 🤝 Contribuindo
 
@@ -232,9 +429,8 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ## 📞 Contato
 
-- Email: seu-email@exemplo.com
-- LinkedIn: [seu-linkedin](https://linkedin.com/in/seu-perfil)
-- GitHub: [@seu-usuario](https://github.com/seu-usuario)
+- Email: wallacedasilvalesk123@gmail.com
+- GitHub: Acesse o repositório do projeto
 
 ## 🙏 Agradecimentos
 
@@ -245,6 +441,3 @@ Este projeto está sob a licença MIT. Veja o arquivo [LICENSE](LICENSE) para ma
 
 ---
 
-**⭐ Se este projeto te ajudou, considere dar uma estrela!**
-
-**Desenvolvido com ❤️ usando React Native e Node.js**
