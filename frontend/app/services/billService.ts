@@ -36,6 +36,17 @@ const getAuthToken = async (): Promise<string> => {
 };
 
 /**
+ * Headers padrão para requisições (inclui bypass do aviso do ngrok)
+ */
+const getDefaultHeaders = async () => {
+  const token = await getAuthToken();
+  return {
+    'Authorization': `Bearer ${token}`,
+    'ngrok-skip-browser-warning': 'true', // Pula o aviso do ngrok
+  };
+};
+
+/**
  * Upload e processamento de conta
  */
 export const uploadBill = async (imageUri: string, userId: string) => {
@@ -62,6 +73,7 @@ export const uploadBill = async (imageUri: string, userId: string) => {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'multipart/form-data',
+        'ngrok-skip-browser-warning': 'true', // Pula o aviso do ngrok
       },
       timeout: 120000, // 2 minutos (para imagens grandes e OCR)
       maxContentLength: Infinity,
@@ -90,7 +102,7 @@ export const listBills = async (
   }
 ) => {
   try {
-    const token = await getAuthToken();
+    const headers = await getDefaultHeaders();
 
     const params = new URLSearchParams();
     if (filters) {
@@ -100,7 +112,7 @@ export const listBills = async (
     }
 
     const response = await axios.get(`${API_URL}/bills/${userId}?${params}`, {
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers,
     });
 
     return response.data;
@@ -115,10 +127,10 @@ export const listBills = async (
  */
 export const getBill = async (billId: string) => {
   try {
-    const token = await getAuthToken();
+    const headers = await getDefaultHeaders();
 
     const response = await axios.get(`${API_URL}/bills/detail/${billId}`, {
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers,
     });
 
     return response.data;
@@ -136,10 +148,10 @@ export const updateBill = async (
   data: Partial<Bill>
 ) => {
   try {
-    const token = await getAuthToken();
+    const headers = await getDefaultHeaders();
 
     const response = await axios.put(`${API_URL}/bills/${billId}`, data, {
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers,
     });
 
     return response.data;
@@ -154,10 +166,10 @@ export const updateBill = async (
  */
 export const markBillAsPaid = async (billId: string) => {
   try {
-    const token = await getAuthToken();
+    const headers = await getDefaultHeaders();
 
     const response = await axios.post(`${API_URL}/bills/${billId}/pay`, {}, {
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers,
     });
 
     return response.data;
@@ -172,10 +184,10 @@ export const markBillAsPaid = async (billId: string) => {
  */
 export const deleteBill = async (billId: string) => {
   try {
-    const token = await getAuthToken();
+    const headers = await getDefaultHeaders();
 
     const response = await axios.delete(`${API_URL}/bills/${billId}`, {
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers,
     });
 
     return response.data;
@@ -190,10 +202,10 @@ export const deleteBill = async (billId: string) => {
  */
 export const getUserStats = async (userId: string) => {
   try {
-    const token = await getAuthToken();
+    const headers = await getDefaultHeaders();
 
     const response = await axios.get(`${API_URL}/bills/${userId}/stats`, {
-      headers: { 'Authorization': `Bearer ${token}` },
+      headers,
     });
 
     return response.data;
