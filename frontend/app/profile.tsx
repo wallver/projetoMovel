@@ -91,7 +91,16 @@ export default function Profile() {
       {/* Informações do Perfil */}
       <View style={styles.content}>
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Informações Pessoais</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Informações Pessoais</Text>
+            <TouchableOpacity 
+              style={styles.editButton}
+              onPress={() => router.push('/edit-info')}
+            >
+              <Ionicons name="create-outline" size={20} color="#007AFF" />
+              <Text style={styles.editButtonText}>Editar</Text>
+            </TouchableOpacity>
+          </View>
           
           <View style={styles.infoRow}>
             <View style={styles.infoIcon}>
@@ -236,11 +245,30 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 3,
   },
+  sectionHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 16,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 16,
+  },
+  editButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+    backgroundColor: "#e3f2fd",
+    gap: 6,
+  },
+  editButtonText: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#007AFF",
   },
   infoRow: {
     flexDirection: "row",

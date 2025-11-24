@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bill Reminder - Apresentação do Projeto</title>
+    <style>
+        @page {
+            size: A4 landscape;
+            margin: 0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+        }
+
+        .slide {
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 60px;
+            page-break-after: always;
+            background: white;
+            position: relative;
+        }
+
+        .slide::after {
+            content: '';
+            position: absolute;
+            bottom: 20px;
+            right: 40px;
+            font-size: 14px;
+            color: #999;
+        }
+
+        h1 {
+            font-size: 3.5em;
+            margin-bottom: 30px;
+            color: #667eea;
+            text-align: center;
+            font-weight: 700;
+        }
+
+        h2 {
+            font-size: 2.5em;
+            margin-bottom: 40px;
+            color: #764ba2;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        h3 {
+            font-size: 2em;
+            margin-bottom: 25px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .cover {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .cover h1 {
+            color: white;
+            font-size: 4em;
+            margin-bottom: 50px;
+        }
+
+        .cover .subtitle {
+            font-size: 1.8em;
+            margin-bottom: 80px;
+            text-align: center;
+        }
+
+        .cover .info {
+            font-size: 1.3em;
+            line-height: 2;
+            text-align: center;
+        }
+
+        .cover .info strong {
+            display: block;
+            margin-top: 20px;
+            font-size: 1.1em;
+        }
+
+        .content {
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .content ul {
+            list-style: none;
+            font-size: 1.4em;
+            line-height: 2;
+        }
+
+        .content ul li {
+            margin-bottom: 15px;
+            padding-left: 40px;
+            position: relative;
+        }
+
+        .content ul li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: #667eea;
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            margin-top: 30px;
+        }
+
+        .tech-stack {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            border-left: 5px solid #667eea;
+        }
+
+        .tech-stack h4 {
+            font-size: 1.5em;
+            color: #764ba2;
+            margin-bottom: 20px;
+        }
+
+        .tech-stack ul {
+            font-size: 1.2em;
+        }
+
+        .flow-diagram {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 1.2em;
+        }
+
+        .flow-step .number {
+            background: #667eea;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            margin-right: 20px;
+            flex-shrink: 0;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .index-list {
+            font-size: 1.5em;
+            line-height: 2.5;
+        }
+
+        .index-list li {
+            padding-left: 0;
+        }
+
+        .index-list li::before {
+            content: counter(item);
+            counter-increment: item;
+            position: absolute;
+            left: 0;
+            background: #667eea;
+            color: white;
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+        }
+
+        .index-list {
+            counter-reset: item;
+        }
+
+        .index-list li {
+            position: relative;
+            padding-left: 60px;
+        }
+
+        .feature-box {
+            background: linear-gradient(135deg, #667eea15 0%, #764ba215 100%);
+            padding: 25px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border: 2px solid #667eea;
+        }
+
+        .feature-box h4 {
+            font-size: 1.4em;
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .feature-box p {
+            font-size: 1.1em;
+            line-height: 1.6;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .slide {
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Slide 1: Capa -->
+    <div class="slide cover">
+        <h1>📱 Bill Reminder</h1>
+        <div class="subtitle">Sistema de Gerenciamento de Contas com OCR</div>
+        <div class="info">
+            <div><strong>Autores:</strong></div>
+            <div>Wallace da Silva Francisco</div>
+            <div>Willian Luiz Iamarino Gandolphi</div>
+            <div><strong>Orientador:</strong></div>
+            <div>Prof. Luiz Gustavo Turatti</div>
+        </div>
+    </div>
+
+    <!-- Slide 2: Índice -->
+    <div class="slide">
+        <h2>📋 Índice</h2>
+        <div class="content">
+            <ul class="index-list">
+                <li>Apresentação do Projeto</li>
+                <li>Problema e Objetivo</li>
+                <li>Funcionalidades Principais</li>
+                <li>Tecnologias Utilizadas</li>
+                <li>Arquitetura do Sistema</li>
+                <li>Processo de Desenvolvimento</li>
+                <li>Fluxo de Funcionamento</li>
+                <li>Desafios e Soluções</li>
+                <li>Resultados e Conclusão</li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide 3: Apresentação do Projeto -->
+    <div class="slide">
+        <h2>🎯 Apresentação do Projeto</h2>
+        <div class="content">
+            <div class="feature-box">
+                <h4>O que é o Bill Reminder?</h4>
+                <p>Sistema inteligente para <span class="highlight">gerenciamento de contas domésticas</span> que utiliza tecnologia de <span class="highlight">reconhecimento óptico de caracteres (OCR)</span> para extrair automaticamente informações de contas e faturas, facilitando o controle financeiro pessoal.</p>
+            </div>
+            <div class="feature-box">
+                <h4>Diferenciais</h4>
+                <p>• Extração automática de dados via OCR<br>
+                • Lembretes inteligentes antes do vencimento<br>
+                • Notificações push no celular<br>
+                • Interface mobile intuitiva e moderna</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 4: Problema e Objetivo -->
+    <div class="slide">
+        <h2>🎯 Problema e Objetivo</h2>
+        <div class="content">
+            <div class="two-columns">
+                <div>
+                    <h3>Problema</h3>
+                    <ul>
+                        <li>Dificuldade em organizar contas domésticas</li>
+                        <li>Esquecimento de datas de vencimento</li>
+                        <li>Processo manual de registro de dados</li>
+                        <li>Falta de lembretes automáticos</li>
+                        <li>Risco de pagamentos em atraso</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Objetivo</h3>
+                    <ul>
+                        <li>Automatizar registro de contas via OCR</li>
+                        <li>Facilitar gestão financeira pessoal</li>
+                        <li>Enviar lembretes automáticos</li>
+                        <li>Reduzir esquecimentos e multas</li>
+                        <li>Oferecer interface mobile amigável</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 5: Funcionalidades Principais -->
+    <div class="slide">
+        <h2>✨ Funcionalidades Principais</h2>
+        <div class="content">
+            <div class="two-columns">
+                <div class="feature-box">
+                    <h4>📸 Captura e OCR</h4>
+                    <p>• Captura de imagem via câmera ou galeria<br>
+                    • Extração automática de valor, data de vencimento, tipo de conta e código de barras<br>
+                    • Detecção de QR Code Pix<br>
+                    • Edição manual de dados extraídos</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🔔 Lembretes Inteligentes</h4>
+                    <p>• 3 dias antes do vencimento<br>
+                    • 1 dia antes do vencimento<br>
+                    • No dia do vencimento<br>
+                    • Notificações push automáticas</p>
+                </div>
+                <div class="feature-box">
+                    <h4>📊 Dashboard</h4>
+                    <p>• Lista organizada de todas as contas<br>
+                    • Filtros por status (pendente, paga, vencida)<br>
+                    • Estatísticas em tempo real<br>
+                    • Visualização de imagens originais</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🔐 Segurança</h4>
+                    <p>• Autenticação via Firebase<br>
+                    • Dados criptografados<br>
+                    • Armazenamento seguro no Firestore<br>
+                    • Tokens JWT para APIs</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 6: Tecnologias Utilizadas -->
+    <div class="slide">
+        <h2>🛠️ Tecnologias Utilizadas</h2>
+        <div class="content">
+            <div class="two-columns">
+                <div class="tech-stack">
+                    <h4>Frontend (Mobile)</h4>
+                    <ul>
+                        <li>React Native</li>
+                        <li>Expo Framework</li>
+                        <li>TypeScript</li>
+                        <li>Expo Router</li>
+                        <li>Firebase SDK</li>
+                        <li>Expo Camera</li>
+                        <li>Expo Notifications</li>
+                        <li>Axios</li>
+                    </ul>
+                </div>
+                <div class="tech-stack">
+                    <h4>Backend (API)</h4>
+                    <ul>
+                        <li>Node.js + Express</li>
+                        <li>TypeScript</li>
+                        <li>Firebase Admin</li>
+                        <li>Tesseract.js (OCR)</li>
+                        <li>Node-cron (Agendamento)</li>
+                        <li>Multer (Upload)</li>
+                        <li>Sharp (Processamento de imagem)</li>
+                        <li>jsQR (Detecção QR Code)</li>
+                    </ul>
+                </div>
+                <div class="tech-stack">
+                    <h4>Infraestrutura</h4>
+                    <ul>
+                        <li>Firebase Firestore (Banco de dados)</li>
+                        <li>Firebase Storage (Armazenamento)</li>
+                        <li>Firebase Authentication</li>
+                        <li>Firebase Cloud Messaging</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 7: Arquitetura do Sistema -->
+    <div class="slide">
+        <h2>🏗️ Arquitetura do Sistema</h2>
+        <div class="content">
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <div class="number">1</div>
+                    <div><strong>Frontend (React Native)</strong> - Interface mobile com Expo</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">2</div>
+                    <div><strong>Backend (Node.js/Express)</strong> - API REST com TypeScript</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">3</div>
+                    <div><strong>Firebase Firestore</strong> - Banco de dados NoSQL para contas e usuários</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">4</div>
+                    <div><strong>Firebase Storage</strong> - Armazenamento de imagens das contas</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">5</div>
+                    <div><strong>OCR Service</strong> - Processamento de imagens com Tesseract.js</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">6</div>
+                    <div><strong>Cron Jobs</strong> - Verificação automática de lembretes a cada 15 minutos</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">7</div>
+                    <div><strong>Notification Service</strong> - Envio de notificações push via Firebase</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 8: Processo de Desenvolvimento -->
+    <div class="slide">
+        <h2>⚙️ Processo de Desenvolvimento</h2>
+        <div class="content">
+            <div class="two-columns">
+                <div>
+                    <h3>Fase 1: Planejamento</h3>
+                    <ul>
+                        <li>Definição de requisitos</li>
+                        <li>Escolha de tecnologias</li>
+                        <li>Design da arquitetura</li>
+                        <li>Configuração do Firebase</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Fase 2: Backend</h3>
+                    <ul>
+                        <li>API REST com Express</li>
+                        <li>Integração com Firebase</li>
+                        <li>Implementação do OCR</li>
+                        <li>Sistema de lembretes</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Fase 3: Frontend</h3>
+                    <ul>
+                        <li>Interface mobile com React Native</li>
+                        <li>Integração com câmera</li>
+                        <li>Autenticação de usuários</li>
+                        <li>Dashboard e listagem</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Fase 4: Integração</h3>
+                    <ul>
+                        <li>Conectar frontend e backend</li>
+                        <li>Testes de OCR</li>
+                        <li>Configuração de notificações</li>
+                        <li>Testes finais</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 9: Fluxo de Funcionamento -->
+    <div class="slide">
+        <h2>🔄 Fluxo de Funcionamento</h2>
+        <div class="content">
+            <div class="flow-diagram">
+                <div class="flow-step">
+                    <div class="number">1</div>
+                    <div>Usuário tira foto da conta ou seleciona da galeria</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">2</div>
+                    <div>Frontend envia imagem para o backend via API</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">3</div>
+                    <div>Backend salva imagem no Firebase Storage</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">4</div>
+                    <div>Backend processa imagem com OCR (Tesseract.js)</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">5</div>
+                    <div>Extração automática: valor, vencimento, tipo, código de barras</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">6</div>
+                    <div>Dados salvos no Firestore e lembretes criados automaticamente</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">7</div>
+                    <div>Cron job verifica lembretes pendentes a cada 15 minutos</div>
+                </div>
+                <div class="flow-step">
+                    <div class="number">8</div>
+                    <div>Notificações push enviadas automaticamente ao usuário</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 10: Desafios e Soluções -->
+    <div class="slide">
+        <h2>💡 Desafios e Soluções</h2>
+        <div class="content">
+            <div class="two-columns">
+                <div class="feature-box">
+                    <h4>Desafio 1: Precisão do OCR</h4>
+                    <p><strong>Solução:</strong> Implementação de múltiplos padrões de regex para extração de valores e datas, com validação e priorização de resultados mais confiáveis.</p>
+                </div>
+                <div class="feature-box">
+                    <h4>Desafio 2: Agendamento de Lembretes</h4>
+                    <p><strong>Solução:</strong> Uso de node-cron para verificação periódica de lembretes pendentes, garantindo envio no momento correto.</p>
+                </div>
+                <div class="feature-box">
+                    <h4>Desafio 3: Comunicação Mobile-Backend</h4>
+                    <p><strong>Solução:</strong> Configuração de ngrok para acesso remoto durante desenvolvimento, permitindo testes em dispositivos reais.</p>
+                </div>
+                <div class="feature-box">
+                    <h4>Desafio 4: Processamento de Imagens</h4>
+                    <p><strong>Solução:</strong> Otimização da qualidade de captura (90%) e uso de Sharp para processamento eficiente de imagens antes do OCR.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Slide 11: Resultados e Conclusão -->
+    <div class="slide">
+        <h2>✅ Resultados e Conclusão</h2>
+        <div class="content">
+            <div class="two-columns">
+                <div>
+                    <h3>Resultados Alcançados</h3>
+                    <ul>
+                        <li>Sistema funcional de OCR para contas</li>
+                        <li>Lembretes automáticos implementados</li>
+                        <li>Interface mobile intuitiva</li>
+                        <li>Integração completa com Firebase</li>
+                        <li>Notificações push funcionais</li>
+                        <li>Extensão para QR Code Pix</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3>Conclusão</h3>
+                    <p style="font-size: 1.3em; line-height: 1.8; margin-top: 20px;">
+                        O <span class="highlight">Bill Reminder</span> demonstra a viabilidade de utilizar tecnologias modernas como <span class="highlight">React Native</span>, <span class="highlight">OCR</span> e <span class="highlight">Firebase</span> para criar soluções práticas que facilitam o dia a dia das pessoas, automatizando tarefas repetitivas e reduzindo a possibilidade de esquecimentos.
+                    </p>
+                    <p style="font-size: 1.2em; margin-top: 30px; text-align: center; color: #667eea; font-weight: 600;">
+                        Obrigado! 🎉
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

@@ -5,11 +5,12 @@ import {
   signOut,
   updateProfile,
   updatePassword,
+  updateEmail,
   reauthenticateWithCredential,
   EmailAuthProvider,
   User
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import { auth, db } from '../utils/firebase';
 import axios from 'axios';
 
@@ -253,6 +254,164 @@ export const changePassword = async (currentPassword: string, newPassword: strin
       message = 'A nova senha deve ter pelo menos 6 caracteres';
     } else if (error.code === 'auth/requires-recent-login') {
       message = 'Por segurança, faça login novamente antes de alterar a senha';
+    }
+
+    return {
+      success: false,
+      message: message
+    };
+  }
+};
+
+// Alterar nome do usuário
+export const changeUsername = async (newUsername: string, currentPassword: string) => {
+  try {
+    const user = auth.currentUser;
+    
+    if (!user || !user.email) {
+      return {
+        success: false,
+        message: 'Usuário não está logado'
+      };
+    }
+
+    if (!newUsername || newUsername.trim().length === 0) {
+      return {
+        success: false,
+        message: 'Nome de usuário não pode estar vazio'
+      };
+    }
+
+    // Re-autenticar usuário (requisito de segurança do Firebase)
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    
+    try {
+      await reauthenticateWithCredential(user, credential);
+    } catch (reauthError: any) {
+      console.error('Erro na re-autenticação:', reauthError);
+      
+      let message = 'Senha incorreta';
+      if (reauthError.code === 'auth/wrong-password' || reauthError.code === 'auth/invalid-credential') {
+        message = 'Senha incorreta';
+      } else if (reauthError.code === 'auth/too-many-requests') {
+        message = 'Muitas tentativas. Tente novamente mais tarde';
+      }
+      
+      return {
+        success: false,
+        message: message
+      };
+    }
+
+    // Atualizar displayName no Firebase Auth
+    await updateProfile(user, {
+      displayName: newUsername.trim()
+    });
+
+    // Atualizar username no Firestore
+    const userRef = doc(db, 'users', user.uid);
+    await updateDoc(userRef, {
+      username: newUsername.trim(),
+      updatedAt: new Date().toISOString()
+    });
+
+    // Sincronizar com backend
+    await syncUserWithBackend(user.uid, user.email || '', newUsername.trim());
+
+    return {
+      success: true,
+      message: 'Nome alterado com sucesso!'
+    };
+  } catch (error: any) {
+    console.error('Erro ao alterar nome:', error);
+    
+    let message = 'Erro ao alterar nome';
+    if (error.code === 'auth/requires-recent-login') {
+      message = 'Por segurança, faça login novamente antes de alterar o nome';
+    }
+
+    return {
+      success: false,
+      message: message
+    };
+  }
+};
+
+// Alterar email do usuário
+export const changeEmail = async (newEmail: string, currentPassword: string) => {
+  try {
+    const user = auth.currentUser;
+    
+    if (!user || !user.email) {
+      return {
+        success: false,
+        message: 'Usuário não está logado'
+      };
+    }
+
+    if (!newEmail || !newEmail.includes('@')) {
+      return {
+        success: false,
+        message: 'Email inválido'
+      };
+    }
+
+    if (newEmail === user.email) {
+      return {
+        success: false,
+        message: 'O novo email deve ser diferente do email atual'
+      };
+    }
+
+    // Re-autenticar usuário (requisito de segurança do Firebase)
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    
+    try {
+      await reauthenticateWithCredential(user, credential);
+    } catch (reauthError: any) {
+      console.error('Erro na re-autenticação:', reauthError);
+      
+      let message = 'Senha incorreta';
+      if (reauthError.code === 'auth/wrong-password' || reauthError.code === 'auth/invalid-credential') {
+        message = 'Senha incorreta';
+      } else if (reauthError.code === 'auth/too-many-requests') {
+        message = 'Muitas tentativas. Tente novamente mais tarde';
+      }
+      
+      return {
+        success: false,
+        message: message
+      };
+    }
+
+    // Atualizar email no Firebase Auth
+    await updateEmail(user, newEmail.trim());
+
+    // Atualizar email no Firestore
+    const userRef = doc(db, 'users', user.uid);
+    await updateDoc(userRef, {
+      email: newEmail.trim(),
+      updatedAt: new Date().toISOString()
+    });
+
+    // Sincronizar com backend
+    const username = user.displayName || (await getDoc(userRef)).data()?.username || newEmail.split('@')[0];
+    await syncUserWithBackend(user.uid, newEmail.trim(), username);
+
+    return {
+      success: true,
+      message: 'Email alterado com sucesso!'
+    };
+  } catch (error: any) {
+    console.error('Erro ao alterar email:', error);
+    
+    let message = 'Erro ao alterar email';
+    if (error.code === 'auth/email-already-in-use') {
+      message = 'Este email já está em uso';
+    } else if (error.code === 'auth/invalid-email') {
+      message = 'Email inválido';
+    } else if (error.code === 'auth/requires-recent-login') {
+      message = 'Por segurança, faça login novamente antes de alterar o email';
     }
 
     return {

@@ -120,6 +120,9 @@ class BillController {
       const { userId } = req.params;
       const { status, type, startDate, endDate, limit = 50 } = req.query;
 
+      console.log('📋 Listando contas para userId:', userId);
+      console.log('🔍 Query params:', { status, type, startDate, endDate, limit });
+
       const filters: any = { limit: Number(limit) };
       if (status) filters.status = status;
       if (type) filters.type = type;
@@ -127,6 +130,8 @@ class BillController {
       if (endDate) filters.endDate = new Date(endDate as string);
 
       const bills = await firestoreService.listBills(userId, filters);
+
+      console.log(`✅ Retornando ${bills.length} contas`);
 
       return res.json({
         success: true,
