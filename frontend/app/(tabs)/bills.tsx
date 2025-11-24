@@ -20,7 +20,13 @@ export default function BillsScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [filter, setFilter] = useState<'ALL' | 'PENDING' | 'PAID' | 'OVERDUE'>('ALL');
-  const [stats, setStats] = useState<any>(null);
+  const [stats, setStats] = useState<any>({
+    pending: 0,
+    paid: 0,
+    overdue: 0,
+    total: 0,
+    totalPendingValue: 0,
+  });
 
   useEffect(() => {
     loadBills();
@@ -39,12 +45,15 @@ export default function BillsScreen() {
     try {
       const user = auth.currentUser;
       if (!user) {
-        console.log('Usuário não autenticado');
+        console.log('❌ Usuário não autenticado');
         setBills([]);
         setLoading(false);
         setRefreshing(false);
         return;
       }
+
+      console.log('🔍 Carregando contas para userId:', user.uid);
+      console.log('📋 Filtro selecionado:', filter);
 
       const filters: any = { limit: 50 };
       if (filter !== 'ALL') {
@@ -52,11 +61,25 @@ export default function BillsScreen() {
       }
 
       const response = await billService.listBills(user.uid, filters);
-      setBills(response.bills || []);
+      console.log('✅ Resposta recebida:', {
+        success: response.success,
+        billsCount: response.bills?.length || 0,
+      });
+
+      if (response.success && response.bills) {
+        setBills(response.bills);
+        console.log(`✅ ${response.bills.length} contas carregadas`);
+      } else {
+        console.warn('⚠️ Resposta sem sucesso ou sem bills:', response);
+        setBills([]);
+      }
     } catch (error: any) {
-      console.error('Erro ao carregar contas:', error);
+      console.error('❌ Erro ao carregar contas:', error);
+      console.error('Detalhes do erro:', {
+        message: error.message,
+        response: error.response?.data,
+      });
       // Não mostrar alerta de erro, apenas log no console
-      // Por enquanto, deixar a lista vazia
       setBills([]);
     } finally {
       setLoading(false);
@@ -68,16 +91,24 @@ export default function BillsScreen() {
     try {
       const user = auth.currentUser;
       if (!user) {
-        setStats({ pending: 0, paid: 0, overdue: 0, total: 0 });
+        setStats({ pending: 0, paid: 0, overdue: 0, total: 0, totalPendingValue: 0 });
         return;
       }
 
       const response = await billService.getUserStats(user.uid);
-      setStats(response.stats);
-    } catch (error) {
+      // Garantir que todos os valores existam, com valores padrão
+      const stats = response?.stats || {};
+      setStats({
+        pending: stats.pending || 0,
+        paid: stats.paid || 0,
+        overdue: stats.overdue || 0,
+        total: stats.total || 0,
+        totalPendingValue: stats.totalPendingValue || 0,
+      });
+    } catch (error: any) {
       console.error('Erro ao carregar estatísticas:', error);
       // Definir stats padrão em caso de erro
-      setStats({ pending: 0, paid: 0, overdue: 0, total: 0 });
+      setStats({ pending: 0, paid: 0, overdue: 0, total: 0, totalPendingValue: 0 });
     }
   };
 
@@ -198,26 +229,24 @@ export default function BillsScreen() {
         </TouchableOpacity>
       </View>
       
-      {stats && (
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Pendentes</Text>
-            <Text style={styles.statValue}>{stats.pending}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Total a Pagar</Text>
-            <Text style={styles.statValue}>
-              {formatCurrency(stats.totalPendingValue)}
-            </Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Vencidas</Text>
-            <Text style={[styles.statValue, styles.overdueText]}>
-              {stats.overdue}
-            </Text>
-          </View>
+      <View style={styles.statsContainer}>
+        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>Pendentes</Text>
+          <Text style={styles.statValue}>{stats?.pending || 0}</Text>
         </View>
-      )}
+        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>Total a Pagar</Text>
+          <Text style={styles.statValue}>
+            {formatCurrency(stats?.totalPendingValue || 0)}
+          </Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statLabel}>Vencidas</Text>
+          <Text style={[styles.statValue, styles.overdueText]}>
+            {stats?.overdue || 0}
+          </Text>
+        </View>
+      </View>
 
       <View style={styles.filterContainer}>
         <TouchableOpacity

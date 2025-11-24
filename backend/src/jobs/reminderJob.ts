@@ -100,9 +100,10 @@ console.log('📅 Agendando cron jobs...');
 cron.schedule('*/15 * * * *', checkReminders);
 console.log('✅ Job de lembretes agendado (a cada 15 minutos)');
 
-// Atualizar contas vencidas todo dia à meia-noite
-cron.schedule('0 0 * * *', updateOverdueBills);
-console.log('✅ Job de atualização de status agendado (todo dia à meia-noite)');
+// Atualizar contas vencidas todo dia à meia-noite e a cada hora
+cron.schedule('0 0 * * *', updateOverdueBills); // Meia-noite
+cron.schedule('0 * * * *', updateOverdueBills); // A cada hora
+console.log('✅ Job de atualização de status agendado (todo dia à meia-noite e a cada hora)');
 
 // Executar verificação inicial
 setTimeout(() => {

@@ -1,23 +1,47 @@
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, Alert, ActivityIndicator, ScrollView } from "react-native";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "expo-router";
-import { changePassword } from "./services/authService";
+import { changePassword, changeUsername, changeEmail, getCurrentUser } from "./services/authService";
 import { Ionicons } from '@expo/vector-icons';
 
 export default function EditInfo() {
   const router = useRouter();
+  const [user, setUser] = useState<any>(null);
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [newUsername, setNewUsername] = useState("");
+  const [newEmail, setNewEmail] = useState("");
+  const [passwordForUsername, setPasswordForUsername] = useState("");
+  const [passwordForEmail, setPasswordForEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPasswordForUsername, setShowPasswordForUsername] = useState(false);
+  const [showPasswordForEmail, setShowPasswordForEmail] = useState(false);
+
+  useEffect(() => {
+    loadUserData();
+  }, []);
+
+  const loadUserData = async () => {
+    try {
+      const currentUser = await getCurrentUser();
+      if (currentUser) {
+        setUser(currentUser);
+        setNewUsername(currentUser.username || currentUser.displayName || "");
+        setNewEmail(currentUser.email || "");
+      }
+    } catch (error) {
+      console.error('Erro ao carregar dados do usuário:', error);
+    }
+  };
 
   const handleChangePassword = async () => {
     // Validações
     if (!currentPassword || !newPassword || !confirmPassword) {
-      Alert.alert("Erro", "Preencha todos os campos");
+      Alert.alert("Erro", "Preencha todos os campos de senha");
       return;
     }
 
@@ -52,7 +76,6 @@ export default function EditInfo() {
                 setCurrentPassword("");
                 setNewPassword("");
                 setConfirmPassword("");
-                router.back();
               }
             }
           ]
@@ -63,6 +86,98 @@ export default function EditInfo() {
     } catch (error) {
       console.error('Erro ao alterar senha:', error);
       Alert.alert("Erro", "Erro inesperado ao alterar senha");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangeUsername = async () => {
+    if (!newUsername || newUsername.trim().length === 0) {
+      Alert.alert("Erro", "Nome de usuário não pode estar vazio");
+      return;
+    }
+
+    if (!passwordForUsername) {
+      Alert.alert("Erro", "Digite sua senha para confirmar a alteração");
+      return;
+    }
+
+    if (newUsername === (user?.username || user?.displayName)) {
+      Alert.alert("Aviso", "O nome é o mesmo que o atual");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await changeUsername(newUsername.trim(), passwordForUsername);
+
+      if (result.success) {
+        Alert.alert(
+          "Sucesso!",
+          result.message,
+          [
+            {
+              text: "OK",
+              onPress: async () => {
+                await loadUserData();
+                setPasswordForUsername("");
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert("Erro", result.message);
+      }
+    } catch (error) {
+      console.error('Erro ao alterar nome:', error);
+      Alert.alert("Erro", "Erro inesperado ao alterar nome");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleChangeEmail = async () => {
+    if (!newEmail || !newEmail.includes('@')) {
+      Alert.alert("Erro", "Email inválido");
+      return;
+    }
+
+    if (!passwordForEmail) {
+      Alert.alert("Erro", "Digite sua senha para confirmar a alteração");
+      return;
+    }
+
+    if (newEmail === user?.email) {
+      Alert.alert("Aviso", "O email é o mesmo que o atual");
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const result = await changeEmail(newEmail.trim(), passwordForEmail);
+
+      if (result.success) {
+        Alert.alert(
+          "Sucesso!",
+          result.message,
+          [
+            {
+              text: "OK",
+              onPress: async () => {
+                await loadUserData();
+                setPasswordForEmail("");
+              }
+            }
+          ]
+        );
+      } else {
+        Alert.alert("Erro", result.message);
+      }
+    } catch (error) {
+      console.error('Erro ao alterar email:', error);
+      Alert.alert("Erro", "Erro inesperado ao alterar email");
     } finally {
       setLoading(false);
     }
@@ -84,6 +199,130 @@ export default function EditInfo() {
 
       {/* Conteúdo */}
       <View style={styles.content}>
+        {/* Seção Alterar Nome */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="person" size={24} color="#007AFF" />
+            <Text style={styles.sectionTitle}>Alterar Nome</Text>
+          </View>
+          
+          <Text style={styles.sectionDescription}>
+            Altere seu nome de usuário
+          </Text>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Nome de Usuário</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Digite seu novo nome"
+              value={newUsername}
+              onChangeText={setNewUsername}
+              editable={!loading}
+              autoCapitalize="words"
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Senha Atual (para confirmar)</Text>
+            <View style={styles.passwordInputWrapper}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Digite sua senha atual"
+                secureTextEntry={!showPasswordForUsername}
+                value={passwordForUsername}
+                onChangeText={setPasswordForUsername}
+                editable={!loading}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity 
+                style={styles.eyeButton}
+                onPress={() => setShowPasswordForUsername(!showPasswordForUsername)}
+              >
+                <Ionicons 
+                  name={showPasswordForUsername ? "eye-off" : "eye"} 
+                  size={24} 
+                  color="#666" 
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {loading ? (
+            <ActivityIndicator size="small" color="#007AFF" style={styles.loading} />
+          ) : (
+            <TouchableOpacity 
+              style={[styles.changeButton, styles.changeButtonSecondary]}
+              onPress={handleChangeUsername}
+            >
+              <Ionicons name="checkmark-circle" size={20} color="#007AFF" />
+              <Text style={[styles.changeButtonText, styles.changeButtonTextSecondary]}>Salvar Nome</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Seção Alterar Email */}
+        <View style={styles.section}>
+          <View style={styles.sectionHeader}>
+            <Ionicons name="mail" size={24} color="#007AFF" />
+            <Text style={styles.sectionTitle}>Alterar Email</Text>
+          </View>
+          
+          <Text style={styles.sectionDescription}>
+            Altere seu endereço de email
+          </Text>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Novo Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Digite seu novo email"
+              value={newEmail}
+              onChangeText={setNewEmail}
+              editable={!loading}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <Text style={styles.label}>Senha Atual (para confirmar)</Text>
+            <View style={styles.passwordInputWrapper}>
+              <TextInput
+                style={styles.passwordInput}
+                placeholder="Digite sua senha atual"
+                secureTextEntry={!showPasswordForEmail}
+                value={passwordForEmail}
+                onChangeText={setPasswordForEmail}
+                editable={!loading}
+                autoCapitalize="none"
+              />
+              <TouchableOpacity 
+                style={styles.eyeButton}
+                onPress={() => setShowPasswordForEmail(!showPasswordForEmail)}
+              >
+                <Ionicons 
+                  name={showPasswordForEmail ? "eye-off" : "eye"} 
+                  size={24} 
+                  color="#666" 
+                />
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {loading ? (
+            <ActivityIndicator size="small" color="#007AFF" style={styles.loading} />
+          ) : (
+            <TouchableOpacity 
+              style={[styles.changeButton, styles.changeButtonSecondary]}
+              onPress={handleChangeEmail}
+            >
+              <Ionicons name="checkmark-circle" size={20} color="#007AFF" />
+              <Text style={[styles.changeButtonText, styles.changeButtonTextSecondary]}>Salvar Email</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        {/* Seção Alterar Senha */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Ionicons name="lock-closed" size={24} color="#007AFF" />
@@ -198,14 +437,6 @@ export default function EditInfo() {
           )}
         </View>
 
-        {/* Outras opções futuras */}
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Ionicons name="information-circle" size={24} color="#007AFF" />
-            <Text style={styles.sectionTitle}>Outras Informações</Text>
-          </View>
-          <Text style={styles.comingSoon}>Em breve você poderá editar nome, email e foto de perfil</Text>
-        </View>
       </View>
     </ScrollView>
   );
@@ -295,6 +526,14 @@ const styles = StyleSheet.create({
     padding: 12,
     fontSize: 16,
   },
+  input: {
+    borderWidth: 1,
+    borderColor: "#ccc",
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    backgroundColor: "#fff",
+  },
   eyeButton: {
     padding: 12,
   },
@@ -336,6 +575,12 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
+  },
+  changeButtonSecondary: {
+    backgroundColor: "#e3f2fd",
+  },
+  changeButtonTextSecondary: {
+    color: "#007AFF",
   },
   loading: {
     marginVertical: 20,

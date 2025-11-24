@@ -208,10 +208,35 @@ export const getUserStats = async (userId: string) => {
       headers,
     });
 
-    return response.data;
+    // Garantir que a resposta tenha o formato esperado
+    if (response.data && response.data.success && response.data.stats) {
+      return response.data;
+    }
+    
+    // Se não tiver o formato esperado, retornar estrutura padrão
+    return {
+      success: true,
+      stats: {
+        total: 0,
+        pending: 0,
+        paid: 0,
+        overdue: 0,
+        totalPendingValue: 0,
+      },
+    };
   } catch (error: any) {
     console.error('Erro ao buscar estatísticas:', error);
-    throw error.response?.data || error;
+    // Retornar estrutura padrão em caso de erro ao invés de lançar exceção
+    return {
+      success: false,
+      stats: {
+        total: 0,
+        pending: 0,
+        paid: 0,
+        overdue: 0,
+        totalPendingValue: 0,
+      },
+    };
   }
 };
 

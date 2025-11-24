@@ -73,14 +73,19 @@ class UserController {
   async updateProfile(req: Request, res: Response) {
     try {
       const { userId } = req.params;
-      const { username } = req.body;
+      const { username, email } = req.body;
 
       const user = await firestoreService.getUserByFirebaseUid(userId);
       if (!user) {
         return res.status(404).json({ error: 'Usuário não encontrado' });
       }
 
-      await firestoreService.syncUser(userId, user.email, username);
+      // Usar email fornecido ou manter o atual
+      const updatedEmail = email || user.email;
+      // Usar username fornecido ou manter o atual
+      const updatedUsername = username || user.username;
+
+      await firestoreService.syncUser(userId, updatedEmail, updatedUsername);
 
       return res.json({ 
         success: true, 
